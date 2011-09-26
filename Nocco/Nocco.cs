@@ -57,7 +57,7 @@ namespace Nocco {
 		private static void GenerateDocumentation(string source) {
 			var lines = File.ReadAllLines(source);
 			var sections = Parse(source, lines);
-			Hightlight(source, sections);
+			Highlight(source, sections);
 			GenerateHtml(source, sections);
 		}
 
@@ -95,7 +95,7 @@ namespace Nocco {
 		// Prepares a single chunk of code for HTML output and runs the text of its
 		// corresponding comment through **Markdown**, using a C# implementation
 		// called [MarkdownSharp](http://code.google.com/p/markdownsharp/).
-		private static void Hightlight(string source, List<Section> sections) {
+		private static void Highlight(string source, List<Section> sections) {
 			var markdown = new MarkdownSharp.Markdown();
 
 			for (var i=0; i<sections.Count; i++) {
@@ -176,6 +176,10 @@ namespace Nocco {
 		private static Dictionary<string, Language> Languages = new Dictionary<string, Language> {
 			{ ".js", new Language {
 				Name = "javascript",
+				Symbol = "//"
+			}},
+			{ ".fs", new Language {
+				Name = "fsharp",
 				Symbol = "//"
 			}},
 			{ ".cs", new Language {
