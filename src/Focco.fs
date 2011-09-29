@@ -57,7 +57,8 @@ module Focco =
     Name : string
     Singleline : string
     MultilineStart : string option
-    MultilineEnd : string option } with
+    MultilineEnd : string option
+    XmlDoc : string option } with
     member x.CommentMatcher =
       RegularExpressions.Regex(@"^\s*" + x.Singleline + @"\s?")
     member x.CommentFilter =
@@ -105,11 +106,31 @@ module Focco =
   // the symbol that indicates a comment. To add another language to Focco's
   // repertoire, add it here. (Support for multiline comments is coming.)
   let private languages =
-    [| (".js", { Name = "javascript"; Singleline = "//"; MultilineStart = Some "/*"; MultilineEnd = Some "*/" })
-       (".fs", { Name = "fsharp"; Singleline = "//"; MultilineStart = Some "(*"; MultilineEnd = Some "*)" })
-       (".cs", { Name = "csharp"; Singleline = "//"; MultilineStart = Some "/*"; MultilineEnd = Some "*/" })
-       (".vb", { Name = "vb.net"; Singleline = "'"; MultilineStart = None; MultilineEnd = None })
-       (".sql", { Name = "sql"; Singleline = "--"; MultilineStart = None; MultilineEnd = None }) |]
+    [| (".js",  { Name = "javascript"
+                  Singleline = "//"
+                  MultilineStart = Some "/*"
+                  MultilineEnd = Some "*/"
+                  XmlDoc = None })
+       (".fs",  { Name = "fsharp"
+                  Singleline = "//"
+                  MultilineStart = Some "(*"
+                  MultilineEnd = Some "*)"
+                  XmlDoc = Some "///" })
+       (".cs",  { Name = "csharp"
+                  Singleline = "//"
+                  MultilineStart = Some "/*"
+                  MultilineEnd = Some "*/"
+                  XmlDoc = Some "///" })
+       (".vb",  { Name = "vb.net"
+                  Singleline = "'"
+                  MultilineStart = None
+                  MultilineEnd = None
+                  XmlDoc = Some "'''" })
+       (".sql", { Name = "sql"
+                  Singleline = "--"
+                  MultilineStart = None
+                  MultilineEnd = None
+                  XmlDoc = None }) |]
     |> dict
   
   let private executingDirectory = Directory.GetCurrentDirectory()
@@ -169,8 +190,7 @@ module Focco =
     let sections, _, docsText, codeText =
       lines |> Seq.fold (fun state line ->
         let sections, hasCode, docsText, codeText = state
-        if language.CommentMatcher.IsMatch(line) &&
-          not (language.CommentFilter.IsMatch(line)) then
+        if language.CommentMatcher.IsMatch(line) && not (language.CommentFilter.IsMatch(line)) then
           if hasCode then
             let sections' = sections |> save docsText codeText
             let docsText' =
