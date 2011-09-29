@@ -282,5 +282,10 @@ module Focco =
       for file in files do generateDocumentation files file
 
 // The program entry point.
-[<EntryPoint>] let main args = Focco.generate args; 0
+[<EntryPoint>]
+let main args =
+  if not (args.Length > 0) then
+    printfn "Run focco with a filename or path with file extension, e.g. `focco.exe src\\*.fs`."
+  else Focco.generate args
+  0
 
