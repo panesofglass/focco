@@ -63,6 +63,9 @@ module Focco =
       RegularExpressions.Regex(@"^\s*" + x.Singleline + @"\s?")
     member x.CommentFilter =
       RegularExpressions.Regex(@"(^#![/]|^\s*#\{)")
+    /// Returns true if the line matches the CommentMatcher and not the CommentFilter; otherwise, false.
+    member x.IsMatch(line) =
+      x.CommentMatcher.IsMatch(line) && not (x.CommentFilter.IsMatch(line))
   
   // The section stores the various sections of a file's generated markup.
   type Section = {
@@ -190,7 +193,7 @@ module Focco =
     let sections, _, docsText, codeText =
       lines |> Seq.fold (fun state line ->
         let sections, hasCode, docsText, codeText = state
-        if language.CommentMatcher.IsMatch(line) && not (language.CommentFilter.IsMatch(line)) then
+        if language.IsMatch(line) then
           if hasCode then
             let sections' = sections |> save docsText codeText
             let docsText' =
