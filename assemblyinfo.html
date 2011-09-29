@@ -1,0 +1,84 @@
+<!DOCTYPE html />
+
+<html>
+<head>
+	<title>AssemblyInfo.fs</title>
+	<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+	<link href="focco.css" rel="stylesheet" media="all" type="text/css" />
+	<script src="prettify.js" type="text/javascript"></script>
+</head>
+<body onload="prettyPrint()">
+	<div id="container">
+		<div id="background"></div>
+			<div id="jump_to">
+				Jump To &hellip;
+				<div id="jump_wrapper">
+					<div id="jump_page">
+							<a class="source" href="assemblyinfo.html">
+								AssemblyInfo.fs
+							</a>
+							<a class="source" href="index.html">
+								Focco.fs
+							</a>
+					</div>
+				</div>
+			</div>
+		<table cellpadding="0" cellspacing="0">
+			<thead>
+				<tr>
+					<th class="docs">
+						<h1>AssemblyInfo.fs</h1>
+					</th>
+					<th class="code"></th>
+				</tr>
+			</thead>
+			<tbody>
+					<tr id="section_1">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_1">&#182;</a>
+							</div>
+							
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>module src.AssemblyInfo
+#nowarn &quot;49&quot; // uppercase argument names
+#nowarn &quot;67&quot; // this type test or downcast will always hold
+#nowarn &quot;66&quot; // tis upast is unnecessary - the types are identical
+#nowarn &quot;58&quot; // possible incorrect indentation..
+#nowarn &quot;57&quot; // do not use create_DelegateEvent
+#nowarn &quot;51&quot; // address-of operator can occur in the code
+open System
+open System.Reflection
+open System.Runtime.CompilerServices
+open System.Runtime.InteropServices
+exception ReturnException183c26a427ae489c8fd92ec21a0c9a59 of obj
+exception ReturnNoneException183c26a427ae489c8fd92ec21a0c9a59
+
+[&lt;assembly: ComVisible (false)&gt;]
+
+[&lt;assembly: CLSCompliant (false)&gt;]
+
+[&lt;assembly: Guid (&quot;5D11607A-CDB0-4270-958C-5C75F98F5122&quot;)&gt;]
+
+[&lt;assembly: AssemblyTitle (&quot;Focco&quot;)&gt;]
+
+[&lt;assembly: AssemblyDescription (&quot;Focco is a quick-and-dirty, literate-programming-style documentation generator.&quot;)&gt;]
+
+[&lt;assembly: AssemblyProduct (&quot;Focco&quot;)&gt;]
+
+[&lt;assembly: AssemblyVersion (&quot;0.1.110929&quot;)&gt;]
+
+[&lt;assembly: AssemblyFileVersion (&quot;0.1.110929&quot;)&gt;]
+
+[&lt;assembly: AssemblyDelaySign (false)&gt;]
+
+()
+</code></pre>
+						</td>
+					</tr>
+			</tbody>
+		</table>
+	</div>
+</body>
+</html>
