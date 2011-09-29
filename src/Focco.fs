@@ -114,32 +114,31 @@ module Focco =
   // the symbol that indicates a comment. To add another language to Focco's
   // repertoire, add it here. (Support for multiline comments is coming.)
   let private languages =
-    [| (".js",  { Name = "javascript"
-                  Singleline = "//"
-                  MultilineStart = Some "/*"
-                  MultilineEnd = Some "*/"
-                  XmlDoc = None })
-       (".fs",  { Name = "fsharp"
-                  Singleline = "//"
-                  MultilineStart = Some "(*"
-                  MultilineEnd = Some "*)"
-                  XmlDoc = Some "///" })
-       (".cs",  { Name = "csharp"
-                  Singleline = "//"
-                  MultilineStart = Some "/*"
-                  MultilineEnd = Some "*/"
-                  XmlDoc = Some "///" })
-       (".vb",  { Name = "vb.net"
-                  Singleline = "'"
-                  MultilineStart = None
-                  MultilineEnd = None
-                  XmlDoc = Some "'''" })
-       (".sql", { Name = "sql"
-                  Singleline = "--"
-                  MultilineStart = None
-                  MultilineEnd = None
-                  XmlDoc = None }) |]
-    |> dict
+    dict [| (".js",  { Name = "javascript"
+                       Singleline = "//"
+                       MultilineStart = Some "/*"
+                       MultilineEnd = Some "*/"
+                       XmlDoc = None })
+            (".fs",  { Name = "fsharp"
+                       Singleline = "//"
+                       MultilineStart = Some "(*"
+                       MultilineEnd = Some "*)"
+                       XmlDoc = Some "///" })
+            (".cs",  { Name = "csharp"
+                       Singleline = "//"
+                       MultilineStart = Some "/*"
+                       MultilineEnd = Some "*/"
+                       XmlDoc = Some "///" })
+            (".vb",  { Name = "vb.net"
+                       Singleline = "'"
+                       MultilineStart = None
+                       MultilineEnd = None
+                       XmlDoc = Some "'''" })
+            (".sql", { Name = "sql"
+                       Singleline = "--"
+                       MultilineStart = None
+                       MultilineEnd = None
+                       XmlDoc = None }) |]
   
   let private executingDirectory =
     Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)
