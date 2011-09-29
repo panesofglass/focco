@@ -100,8 +100,8 @@ module Focco =
   // repertoire, add it here. (Support for multiline comments is coming.)
   let private languages =
     [| (".js", { Name = "javascript"; Symbol = "//"; MultilineStart = Some "/*"; MultilineEnd = Some "*/" })
-       (".fs", { Name = "fsharp"; Symbol = "//"; MultilineStart = Some "/*"; MultilineEnd = Some "*/" })
-       (".cs", { Name = "csharp"; Symbol = "//"; MultilineStart = Some "(*"; MultilineEnd = Some "*)" })
+       (".fs", { Name = "fsharp"; Symbol = "//"; MultilineStart = Some "(*"; MultilineEnd = Some "*)" })
+       (".cs", { Name = "csharp"; Symbol = "//"; MultilineStart = Some "/*"; MultilineEnd = Some "*/" })
        (".vb", { Name = "vb.net"; Symbol = "'"; MultilineStart = None; MultilineEnd = None })
        (".sql", { Name = "sql"; Symbol = "--"; MultilineStart = None; MultilineEnd = None }) |]
     |> dict
