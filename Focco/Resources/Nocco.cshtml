@@ -10,12 +10,12 @@
 <body onload="prettyPrint()">
 	<div id="container">
 		<div id="background"></div>
-		@if (@Sources.Count > 1) {
+		@if (@Sources.Length > 1) {
 			<div id="jump_to">
 				Jump To &hellip;
 				<div id="jump_wrapper">
 					<div id="jump_page">
-						@for (var i = 0; i < Sources.Count; i++) {
+						@for (var i = 0; i < Sources.Length; i++) {
 							<a class="source" href="@GetSourcePath(Sources[i])">
 								@Sources[i].Substring(2)
 							</a>
@@ -34,7 +34,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				@for (var i = 0; i < Sections.Count; i++) {
+				@for (var i = 0; i < Sections.Length; i++) {
 					<tr id="section_@(i + 1)">
 						<td class="docs">
 							<div class="pilwrap">

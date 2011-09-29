@@ -32,151 +32,207 @@
 // Both are by [Ryan Tomayko](http://github.com/rtomayko). If Python's more
 // your speed, take a look at [Nick Fitzgerald](http://github.com/fitzgen)'s
 // [Pycco](http://fitzgen.github.com/pycco/).
-module Nocco
+module Nocco =
 
-// Import namespaces to allow us to type shorter type names.
-open System
-open System.IO
-open System.Text
-open RazorEngine
+  // Import namespaces to allow us to type shorter type names.
+  open System
+  open System.CodeDom.Compiler
+  open System.IO
+  open System.Linq
+  open System.Text
+  open System.Web.Razor
+  
+  // The language type stores each supported language,
+  // as well as regex matchers to determine whether or not
+  // a given file matches a supported language.
+  type Language = {
+    Name : string
+    Symbol : string
+    MultilineStart : string option
+    MultilineEnd : string option } with
+    member x.CommentMatcher =
+      RegularExpressions.Regex(@"^\s*" + x.Symbol + @"\s?")
+    member x.CommentFilter =
+      RegularExpressions.Regex(@"(^#![/]|^\s*#\{)")
+  
+  // The section stores the various sections of a file's generated markup.
+  type Section = {
+    CodeHtml : string
+    DocsHtml : string }
+  
+  // The template base class for the rendering via Razor.
+  [<AbstractClass>]
+  type TemplateBase() =
+    let mutable buffer = new StringBuilder()
+    let mutable title : string = null
+    let mutable pathToCss : string = null
+    let mutable getSourcePath : Func<string,string> = null
+    let mutable sections : Section[] = null
+    let mutable sources : string[] = null
+    member x.Buffer
+      with get() = buffer
+      and  set(value) = buffer <- value
+    member x.Title
+      with get() = title
+      and  set(value) = title <- value
+    member x.PathToCss
+      with get() = pathToCss
+      and  set(value) = pathToCss <- value
+    member x.GetSourcePath
+      with get() = getSourcePath
+      and  set(value) = getSourcePath <- value
+    member x.Sections
+      with get() = sections
+      and  set(value) = sections <- value
+    member x.Sources
+      with get() = sources
+      and  set(value) = sources <- value
+    abstract Execute : unit -> unit
+    abstract WriteLiteral : obj -> unit
+    default x.WriteLiteral(value) = x.Buffer.Append(value) |> ignore
+    abstract Write : obj -> unit
+    default x.Write(value) = x.WriteLiteral(value)
+  
+  // A list of the languages that Nocco supports, mapping the file extension to
+  // the symbol that indicates a comment. To add another language to Nocco's
+  // repertoire, add it here.
+  let private languages =
+    [|(".js", { Name = "javascript"; Symbol = "//"; MultilineStart = Some "/*"; MultilineEnd = Some "*/" })
+      (".fs", { Name = "fsharp"; Symbol = "//"; MultilineStart = Some "/*"; MultilineEnd = Some "*/" })
+      (".cs", { Name = "csharp"; Symbol = "//"; MultilineStart = Some "(*"; MultilineEnd = Some "*)" })
+      (".vb", { Name = "vb.net"; Symbol = "'"; MultilineStart = None; MultilineEnd = None })
+      (".sql", { Name = "sql"; Symbol = "--"; MultilineStart = None; MultilineEnd = None }) |]
+    |> dict
+  
+  let private executingDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)
+  
+  let private getTemplateType() =
+    let host = RazorEngineHost(CSharpRazorCodeLanguage())
+    host.DefaultBaseClass <- typeof<TemplateBase>.FullName
+    host.DefaultNamespace <- "RazorOutput"
+    host.DefaultClassName <- "Template"
+    host.NamespaceImports.Add("System") |> ignore
+  
+    use reader = new StreamReader(Path.Combine(executingDirectory, "Resources", "Nocco.cshtml"))
+    let razorResult = RazorTemplateEngine(host).GenerateCode(reader)
+  
+    let compilerParams =
+      CompilerParameters(
+        GenerateInMemory = true,
+        GenerateExecutable = false,
+        IncludeDebugInformation = false,
+        CompilerOptions = "/target:library /optimize")
+    compilerParams.ReferencedAssemblies.
+      Add(typeof<TemplateBase>.Assembly.CodeBase.Replace("file:///","").Replace("/","\\")) |> ignore
+  
+    let codeProvider = new Microsoft.CSharp.CSharpCodeProvider()
+    let results = codeProvider.CompileAssemblyFromDom(compilerParams, razorResult.GeneratedCode)
+  
+    // Check for errors that may have occurred during template generation.
+    if results.Errors.HasErrors then
+      results.Errors.OfType<CompilerError>()
+      |> Seq.filter (fun x -> not x.IsWarning)
+      |> Seq.iter (fun x -> printfn "Error compiling template: (%d, %d) %s" x.Line x.Column x.ErrorText)
+  
+    results.CompiledAssembly.GetType("RazorOutput.Template")
+  
+  // Get the current language we're documenting, based on the extension.
+  let private getLanguage source =
+    let extension = Path.GetExtension source
+    if languages.ContainsKey(extension)
+      then languages.[extension]
+      else Unchecked.defaultof<Language>
+  
+  // Given a string of source code, parse out each comment and the code that
+  // follows it, and create an individual `Section` for it.
+  let private parse source lines =
+    let language = getLanguage(source)
+    let save docsText codeText sections =
+      { DocsHtml = docsText.ToString()
+        CodeHtml = codeText.ToString() }
+      :: sections
+    let sections, _, docsText, codeText =
+      lines |> Seq.fold (fun state line ->
+        let sections, hasCode, docsText, codeText = state
+        if language.CommentMatcher.IsMatch(line) &&
+          not (language.CommentFilter.IsMatch(line)) then
+          if hasCode then
+            let sections' = sections |> save docsText codeText
+            let docsText' =
+              let sb = new StringBuilder()
+              in sb.AppendLine(language.CommentMatcher.Replace(line,""))
+            (sections', false, docsText', new StringBuilder())
+          else
+            (sections, hasCode, docsText.AppendLine(language.CommentMatcher.Replace(line, "")), codeText)
+        else (sections, true, docsText, codeText.AppendLine(line)))
+        ([], false, StringBuilder(), StringBuilder())
+    sections |> save docsText codeText |> List.rev
+  
+  // Prepares a single chunk of code for HTML output and runs the text of its
+  // corresponding comment through **Markdown**, using a C# implementation
+  // called [MarkdownSharp](http://code.google.com/p/markdownsharp/).
+  let private highlight source sections =
+    let markdown = MarkdownSharp.Markdown()
+    sections |> Seq.map (fun section ->
+      { section with
+          DocsHtml = markdown.Transform(section.DocsHtml)
+          CodeHtml = System.Web.HttpUtility.HtmlEncode(section.CodeHtml) })
+  
+  // Compute the destination HTML path for an input source file path. If the source
+  // is `Example.cs`, the HTML will be at `docs/example.html`
+  let private getDestination filepath =
+    let directories = Path.GetDirectoryName(filepath).Substring(1).Split([| Path.DirectorySeparatorChar |], StringSplitOptions.RemoveEmptyEntries)
+    let depth = directories.Length
+    let destination = Path.Combine("docs", String.Join(Path.DirectorySeparatorChar.ToString(), directories)).ToLower()
+    Directory.CreateDirectory(destination) |> ignore
+    Path.Combine("docs", Path.ChangeExtension(filepath, "html").ToLower()), depth
+  
+  // Once all of the code is finished highlighting, we can generate the HTML file
+  // and write out the documentation. Pass the completed sections into the template
+  // found in `Resources/Nocco.cshtml`
+  let private generateHtml source files sections =
+    let destination, depth = getDestination source
+    let pathToRoot = List.fold (fun pathToRoot _ -> Path.Combine("..", pathToRoot)) "" [0..(depth-1)]
+  
+    let templateType = getTemplateType()
+    let htmlTemplate = Activator.CreateInstance(templateType) :?> TemplateBase
 
-// The language type stores each supported language,
-// as well as regex matchers to determine whether or not
-// a given file matches a supported language.
-type Language = {
-  Name : string
-  Symbol : string
-  MultilineStart : string option
-  MultilineEnd : string option } with
-  member x.CommentMatcher =
-    RegularExpressions.Regex(@"^\s*" + x.Symbol + @"\s?")
-  member x.CommentFilter =
-    RegularExpressions.Regex(@"(^#![/]|^\s*#\{)")
+    htmlTemplate.Title <- Path.GetFileName(source)
+    htmlTemplate.PathToCss <- Path.Combine(pathToRoot, "nocco.css").Replace('\\', '/')
+    htmlTemplate.Sections <- sections |> Array.ofSeq
+    htmlTemplate.Sources <- files |> Array.ofSeq
+    htmlTemplate.GetSourcePath <- Func<_,_>(fun s ->
+      Path.Combine(pathToRoot, Path.ChangeExtension(s.ToLower(), ".html").Substring(2)).Replace('\\', '/'))
+  
+    htmlTemplate.Execute()
+    File.WriteAllText(destination, htmlTemplate.Buffer.ToString())
+  
+  //### Main Documentation Generation Functions
+  
+  // Generate the documentation for a source file by reading it in, splitting it
+  // up into comment/code sections, highlighting them for the appropriate language,
+  // and merging them into an HTML template.
+  let private generateDocumentation files source =
+    File.ReadAllLines source
+    |> parse source
+    |> highlight source
+    |> generateHtml source files
+  
+  // Find all the files that match the pattern(s) passed in as arguments and
+  // generate documentation for each one.
+  let generate (targets:string[]) =
+    if targets.Length <= 0 then
+      failwith "At least one target must be specified"
+    else
+      Directory.CreateDirectory("docs") |> ignore
+      File.Copy(Path.Combine(executingDirectory, "Resources", "Nocco.css"), Path.Combine("docs", "nocco.css"), true)
+      File.Copy(Path.Combine(executingDirectory, "Resources", "prettify.js"), Path.Combine("docs", "prettify.js"), true)
+      let files =
+        [ for target in targets do
+            yield! Directory.GetFiles(".", target, SearchOption.AllDirectories)
+                   |> Seq.filter (fun filename ->
+                      not (getLanguage(Path.GetFileName(filename)) = Unchecked.defaultof<Language>)) ]
+      for file in files do generateDocumentation files file
 
-// The section stores the various sections of a file's generated markup.
-type Section = {
-  CodeHtml : string
-  DocsHtml : string }
-
-// The model for the [RazorEngine](http://razorengine.codeplex.com/) template.
-type Model = {
-  Title : string
-  PathToCss : string
-  Sections : Section []
-  Sources : string []
-  GetSourcePath : Func<string,string> }
-
-// A list of the languages that Nocco supports, mapping the file extension to
-// the symbol that indicates a comment. To add another language to Nocco's
-// repertoire, add it here.
-[<CompiledNameAttribute("Languages")>]
-let private languages =
-  [|(".js", { Name = "javascript"; Symbol = "//"; MultilineStart = Some "/*"; MultilineEnd = Some "*/" })
-    (".fs", { Name = "fsharp"; Symbol = "//"; MultilineStart = Some "/*"; MultilineEnd = Some "*/" })
-    (".cs", { Name = "csharp"; Symbol = "//"; MultilineStart = Some "(*"; MultilineEnd = Some "*)" })
-    (".vb", { Name = "vb.net"; Symbol = "'"; MultilineStart = None; MultilineEnd = None })
-    (".sql", { Name = "sql"; Symbol = "--"; MultilineStart = None; MultilineEnd = None }) |]
-  |> dict
-
-// Get the current language we're documenting, based on the extension.
-[<CompiledNameAttribute("GetLanguage")>]
-let private getLanguage source =
-  let extension = Path.GetExtension source
-  if languages.ContainsKey(extension)
-    then languages.[extension]
-    else Unchecked.defaultof<Language>
-
-// Given a string of source code, parse out each comment and the code that
-// follows it, and create an individual `Section` for it.
-[<CompiledNameAttribute("Parse")>]
-let private parse source lines =
-  let language = getLanguage(source)
-  let sections, _, _, _ =
-    lines |> Seq.fold (fun state line ->
-      let sections, hasCode, docsText, codeText = state
-      if language.CommentMatcher.IsMatch(line) &&
-        not (language.CommentFilter.IsMatch(line)) then
-        if hasCode then
-          let sections' =
-            { DocsHtml = docsText.ToString()
-              CodeHtml = codeText.ToString() }
-            :: sections
-          let docsText' =
-            let sb = new StringBuilder()
-            in sb.AppendLine(language.CommentMatcher.Replace(line,""))
-          (sections', false, docsText', new StringBuilder())
-        else
-          (sections, hasCode, docsText.AppendLine(language.CommentMatcher.Replace(line, "")), codeText)
-      else (sections, hasCode, docsText, codeText.AppendLine(line)))
-      ([], false, StringBuilder(), StringBuilder())
-  List.rev sections
-
-// Prepares a single chunk of code for HTML output and runs the text of its
-// corresponding comment through **Markdown**, using a C# implementation
-// called [MarkdownSharp](http://code.google.com/p/markdownsharp/).
-[<CompiledNameAttribute("Highlight")>]
-let private highlight source sections =
-  let markdown = MarkdownSharp.Markdown()
-  sections |> Seq.map (fun section ->
-    { section with
-        DocsHtml = markdown.Transform(section.DocsHtml)
-        CodeHtml = System.Web.HttpUtility.HtmlEncode(section.CodeHtml) })
-
-// Compute the destination HTML path for an input source file path. If the source
-// is `Example.cs`, the HTML will be at `docs/example.html`
-[<CompiledNameAttribute("GetDestination")>]
-let private getDestination filepath =
-  let directories = Path.GetDirectoryName(filepath).Substring(1).Split([| Path.DirectorySeparatorChar |], StringSplitOptions.RemoveEmptyEntries)
-  let depth = directories.Length
-  let destination = Path.Combine("docs", String.Join(Path.DirectorySeparatorChar.ToString(), directories)).ToLower()
-  Directory.CreateDirectory(destination) |> ignore
-  Path.Combine("docs", Path.ChangeExtension(filepath, "html").ToLower()), depth
-
-// Once all of the code is finished highlighting, we can generate the HTML file
-// and write out the documentation. Pass the completed sections into the template
-// found in `Resources/Nocco.cshtml`
-[<CompiledNameAttribute("GenerateHtml")>]
-let private generateHtml source files sections =
-  let destination, depth = getDestination source
-  let pathToRoot = List.fold (fun pathToRoot _ -> Path.Combine("..", pathToRoot)) "" [0..(depth-1)]
-  let template = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "Nocco.cshtml"))
-  let model = {
-      Title = Path.GetFileName(source)
-      PathToCss = Path.Combine(pathToRoot, "nocco.css").Replace('\\', '/')
-      Sections = sections |> Array.ofSeq
-      Sources = files |> Array.ofSeq
-      GetSourcePath = Func<_,_>(fun s ->
-        Path.Combine(pathToRoot, Path.ChangeExtension(s.ToLower(), ".html").Substring(2)).Replace('\\', '/')) }
-  let result = Razor.Parse(template, model)
-  File.WriteAllText(destination, result)
-
-//### Main Documentation Generation Functions
-
-// Generate the documentation for a source file by reading it in, splitting it
-// up into comment/code sections, highlighting them for the appropriate language,
-// and merging them into an HTML template.
-[<CompiledNameAttribute("GenerateDocumentation")>]
-let private generateDocumentation files source =
-  let files = []
-  File.ReadAllLines source
-  |> parse source
-  |> highlight source
-  |> generateHtml source files
-
-// Find all the files that match the pattern(s) passed in as arguments and
-// generate documentation for each one.
-[<CompiledNameAttribute("Generate")>]
-let generate (targets:string[]) =
-  if targets.Length <= 0 then
-    failwith "At least one target must be specified"
-  else
-    Directory.CreateDirectory("docs") |> ignore
-    let executingDirectory = Directory.GetCurrentDirectory()
-    File.Copy(Path.Combine(executingDirectory, "Nocco.css"), Path.Combine("docs", "nocco.css"), true)
-    File.Copy(Path.Combine(executingDirectory, "prettify.js"), Path.Combine("docs", "prettify.js"), true)
-    let files =
-      [ for target in targets do
-          yield! Directory.GetFiles(".", target, SearchOption.AllDirectories)
-                 |> Seq.filter (fun filename ->
-                    not (getLanguage(Path.GetFileName(filename)) = Unchecked.defaultof<Language>)) ]
-    for file in files do generateDocumentation files file
+// The program entry point.
+[<EntryPoint>] let main args = Nocco.generate args; 0
