@@ -1,28 +1,30 @@
-﻿// **Nocco** is a quick-and-dirty, literate-programming-style documentation
-// generator. It is a F# port of [Docco](http://jashkenas.github.com/docco/) for .NET,
+﻿// **Focco** is a quick-and-dirty, literate-programming-style documentation
+// generator. It is a F# port of [Nocco](http://dontangg.github.com/nocco/)
+// by [Don Wilson](https://github.com/dontangg/),
+// which in turn is a port of [Docco](http://jashkenas.github.com/docco/) for .NET,
 // which was written by [Jeremy Ashkenas](https://github.com/jashkenas) in
 // Coffescript and runs on node.js.
 //
-// Nocco produces HTML that displays your comments alongside your code.
+// Focco produces HTML that displays your comments alongside your code.
 // Comments are passed through
 // [Markdown](http://daringfireball.net/projects/markdown/syntax), and code is
 // highlighted using [google-code-prettify](http://code.google.com/p/google-code-prettify/)
-// syntax highlighting. This page is the result of running Nocco against its
+// syntax highlighting. This page is the result of running Focco against its
 // own source files.
 //
-// Currently, to build Nocco, you'll have to have Visual Studio 2010.
+// Currently, to build Focco, you'll have to have .NET 4.0 and [F# 2.0](http://github.com/fsharp/fsharp).
 // The project depends on
 // [MarkdownSharp](http://code.google.com/p/markdownsharp/) and
-// [RazorEngine](http://razorengine.codeplex.com/).
+// [RazorEngine](http://razorengine.codeplex.com/) (for the System.Web.Razor assembly).
 //
-// To use Nocco, run it from the command-line:
+// To use Focco, run it from the command-line:
 //
-//     nocco *.cs
+//     focco *.fs
 //
 // ...will generate linked HTML documentation for the named source files, saving
 // it into a `docs` folder.
 //
-// The [source for Nocco](http://github.com/panesofglass/nocco) is available on GitHub, and released under the MIT license.
+// The [source for Focco](http://github.com/panesofglass/focco) is available on GitHub, and released under the MIT license.
 // The [original source in C#](http://github.com/dontangg/nocco) is also available on GitHub.
 //
 // If **.NET** doesn't run on your platform, or you'd prefer a more convenient
@@ -32,7 +34,7 @@
 // Both are by [Ryan Tomayko](http://github.com/rtomayko). If Python's more
 // your speed, take a look at [Nick Fitzgerald](http://github.com/fitzgen)'s
 // [Pycco](http://fitzgen.github.com/pycco/).
-module Nocco =
+module Focco =
 
   // Import namespaces to allow us to type shorter type names.
   open System
@@ -93,8 +95,8 @@ module Nocco =
     abstract Write : obj -> unit
     default x.Write(value) = x.WriteLiteral(value)
   
-  // A list of the languages that Nocco supports, mapping the file extension to
-  // the symbol that indicates a comment. To add another language to Nocco's
+  // A list of the languages that Focco supports, mapping the file extension to
+  // the symbol that indicates a comment. To add another language to Focco's
   // repertoire, add it here.
   let private languages =
     [|(".js", { Name = "javascript"; Symbol = "//"; MultilineStart = Some "/*"; MultilineEnd = Some "*/" })
@@ -113,7 +115,7 @@ module Nocco =
     host.DefaultClassName <- "Template"
     host.NamespaceImports.Add("System") |> ignore
   
-    use reader = new StreamReader(Path.Combine(executingDirectory, "Resources", "Nocco.cshtml"))
+    use reader = new StreamReader(Path.Combine(executingDirectory, "Resources", "Focco.cshtml"))
     let razorResult = RazorTemplateEngine(host).GenerateCode(reader)
   
     let compilerParams =
@@ -189,7 +191,7 @@ module Nocco =
   
   // Once all of the code is finished highlighting, we can generate the HTML file
   // and write out the documentation. Pass the completed sections into the template
-  // found in `Resources/Nocco.cshtml`
+  // found in `Resources/Focco.cshtml`
   let private generateHtml source files sections =
     let destination, depth = getDestination source
     let pathToRoot = List.fold (fun pathToRoot _ -> Path.Combine("..", pathToRoot)) "" [0..(depth-1)]
@@ -225,7 +227,7 @@ module Nocco =
       failwith "At least one target must be specified"
     else
       Directory.CreateDirectory("docs") |> ignore
-      File.Copy(Path.Combine(executingDirectory, "Resources", "Nocco.css"), Path.Combine("docs", "nocco.css"), true)
+      File.Copy(Path.Combine(executingDirectory, "Resources", "Focco.css"), Path.Combine("docs", "nocco.css"), true)
       File.Copy(Path.Combine(executingDirectory, "Resources", "prettify.js"), Path.Combine("docs", "prettify.js"), true)
       let files =
         [ for target in targets do
@@ -235,4 +237,5 @@ module Nocco =
       for file in files do generateDocumentation files file
 
 // The program entry point.
-[<EntryPoint>] let main args = Nocco.generate args; 0
+[<EntryPoint>] let main args = Focco.generate args; 0
+
