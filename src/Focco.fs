@@ -43,7 +43,13 @@ module Focco =
   open System.Linq
   open System.Text
   open System.Web.Razor
-  
+
+  //### Helpers & Setup
+
+  // In F#, literate means bottom up. You have to define what you want to use
+  // before you use it. Therefore, we start with the helpers and setup
+  // then get into the more meaty generation.
+
   // The language type stores each supported language,
   // as well as regex matchers to determine whether or not
   // a given file matches a supported language.
@@ -107,7 +113,14 @@ module Focco =
     |> dict
   
   let private executingDirectory = Directory.GetCurrentDirectory()
-  
+
+  // Setup the Razor templating engine so that we can quickly pass the data in
+  // and generate HTML.
+  //
+  // The file `Resources\Focco.cshtml` is read and compiled into a new dll
+  // with a type that extends the `TemplateBase` class. This new assembly is
+  // loaded so that we can create an instance and pass data into it
+  // and generate the HTML.
   let private getTemplateType() =
     let host = RazorEngineHost(CSharpRazorCodeLanguage())
     host.DefaultBaseClass <- typeof<TemplateBase>.FullName
@@ -189,6 +202,8 @@ module Focco =
     Directory.CreateDirectory(destination) |> ignore
     Path.Combine("docs", Path.ChangeExtension(filepath, "html").ToLower()), depth
   
+  //### Main Documentation Generation Functions
+  
   // Once all of the code is finished highlighting, we can generate the HTML file
   // and write out the documentation. Pass the completed sections into the template
   // found in `Resources/Focco.cshtml`
@@ -208,8 +223,6 @@ module Focco =
   
     htmlTemplate.Execute()
     File.WriteAllText(destination, htmlTemplate.Buffer.ToString())
-  
-  //### Main Documentation Generation Functions
   
   // Generate the documentation for a source file by reading it in, splitting it
   // up into comment/code sections, highlighting them for the appropriate language,
