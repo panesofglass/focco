@@ -197,7 +197,7 @@ module Focco =
           if hasCode then
             let sections' = sections |> save docsText codeText
             let docsText' =
-              let sb = new StringBuilder()
+              let sb = StringBuilder()
               in sb.AppendLine(language.CommentMatcher.Replace(line,""))
             (sections', false, docsText', new StringBuilder())
           else
@@ -219,9 +219,13 @@ module Focco =
   // Compute the destination HTML path for an input source file path. If the source
   // is `Example.cs`, the HTML will be at `docs/example.html`
   let private getDestination filepath =
-    let directories = Path.GetDirectoryName(filepath).Substring(1).Split([| Path.DirectorySeparatorChar |], StringSplitOptions.RemoveEmptyEntries)
+    let directories =
+      Path.GetDirectoryName(filepath)
+        .Substring(1)
+        .Split([| Path.DirectorySeparatorChar |], StringSplitOptions.RemoveEmptyEntries)
     let depth = directories.Length
-    let destination = Path.Combine("docs", String.Join(Path.DirectorySeparatorChar.ToString(), directories)).ToLower()
+    let destination =
+      Path.Combine("docs", String.Join(Path.DirectorySeparatorChar.ToString(), directories)).ToLower()
     Directory.CreateDirectory(destination) |> ignore
     Path.Combine("docs", Path.ChangeExtension(filepath, "html").ToLower()), depth
   
@@ -263,8 +267,12 @@ module Focco =
       failwith "At least one target must be specified"
     else
       Directory.CreateDirectory("docs") |> ignore
-      File.Copy(Path.Combine(executingDirectory, "Resources", "Focco.css"), Path.Combine("docs", "focco.css"), true)
-      File.Copy(Path.Combine(executingDirectory, "Resources", "prettify.js"), Path.Combine("docs", "prettify.js"), true)
+      File.Copy(sourceFileName = Path.Combine(executingDirectory, "Resources", "Focco.css"),
+                destFileName = Path.Combine("docs", "focco.css"),
+                overwrite = true)
+      File.Copy(sourceFileName = Path.Combine(executingDirectory, "Resources", "prettify.js"),
+                destFileName = Path.Combine("docs", "prettify.js"),
+                overwrite = true)
       let files =
         [ for target in targets do
             yield! Directory.GetFiles(".", target, SearchOption.AllDirectories)
