@@ -55,11 +55,11 @@ module Focco =
   // a given file matches a supported language.
   type Language = {
     Name : string
-    Symbol : string
+    Singleline : string
     MultilineStart : string option
     MultilineEnd : string option } with
     member x.CommentMatcher =
-      RegularExpressions.Regex(@"^\s*" + x.Symbol + @"\s?")
+      RegularExpressions.Regex(@"^\s*" + x.Singleline + @"\s?")
     member x.CommentFilter =
       RegularExpressions.Regex(@"(^#![/]|^\s*#\{)")
   
@@ -105,11 +105,11 @@ module Focco =
   // the symbol that indicates a comment. To add another language to Focco's
   // repertoire, add it here. (Support for multiline comments is coming.)
   let private languages =
-    [| (".js", { Name = "javascript"; Symbol = "//"; MultilineStart = Some "/*"; MultilineEnd = Some "*/" })
-       (".fs", { Name = "fsharp"; Symbol = "//"; MultilineStart = Some "(*"; MultilineEnd = Some "*)" })
-       (".cs", { Name = "csharp"; Symbol = "//"; MultilineStart = Some "/*"; MultilineEnd = Some "*/" })
-       (".vb", { Name = "vb.net"; Symbol = "'"; MultilineStart = None; MultilineEnd = None })
-       (".sql", { Name = "sql"; Symbol = "--"; MultilineStart = None; MultilineEnd = None }) |]
+    [| (".js", { Name = "javascript"; Singleline = "//"; MultilineStart = Some "/*"; MultilineEnd = Some "*/" })
+       (".fs", { Name = "fsharp"; Singleline = "//"; MultilineStart = Some "(*"; MultilineEnd = Some "*)" })
+       (".cs", { Name = "csharp"; Singleline = "//"; MultilineStart = Some "/*"; MultilineEnd = Some "*/" })
+       (".vb", { Name = "vb.net"; Singleline = "'"; MultilineStart = None; MultilineEnd = None })
+       (".sql", { Name = "sql"; Singleline = "--"; MultilineStart = None; MultilineEnd = None }) |]
     |> dict
   
   let private executingDirectory = Directory.GetCurrentDirectory()
