@@ -136,7 +136,8 @@ module Focco =
                   XmlDoc = None }) |]
     |> dict
   
-  let private executingDirectory = Directory.GetCurrentDirectory()
+  let private executingDirectory =
+    Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)
 
   // Setup the Razor templating engine so that we can quickly pass the data in
   // and generate HTML.
