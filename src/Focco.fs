@@ -62,7 +62,12 @@ module Focco =
     member x.CommentMatcher =
       RegularExpressions.Regex(@"^\s*" + x.Singleline + @"\s?")
     member x.CommentFilter =
-      RegularExpressions.Regex(@"(^#![/]|^\s*#\{)")
+      let baseRegex = @"^#![/]|^\s*#\{"
+      let matchRegex =
+        match x.XmlDoc with
+        | Some v -> baseRegex + @"|^\s*" + v
+        | _ -> baseRegex
+      RegularExpressions.Regex(sprintf "(%s)" matchRegex)
     /// Returns true if the line matches the CommentMatcher and not the CommentFilter; otherwise, false.
     member x.IsMatch(line) =
       x.CommentMatcher.IsMatch(line) && not (x.CommentFilter.IsMatch(line))
@@ -203,6 +208,7 @@ module Focco =
             (sections', false, docsText', new StringBuilder())
           else
             (sections, hasCode, docsText.AppendLine(language.CommentMatcher.Replace(line, "")), codeText)
+        elif language.CommentFilter.IsMatch(line) then (sections, true, docsText, codeText)
         else (sections, true, docsText, codeText.AppendLine(line)))
         ([], false, StringBuilder(), StringBuilder())
     sections |> save docsText codeText |> List.rev
