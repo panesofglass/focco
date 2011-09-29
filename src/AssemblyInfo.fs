@@ -16,7 +16,7 @@ exception ReturnNoneException183c26a427ae489c8fd92ec21a0c9a59
 
 [<assembly: CLSCompliant (false)>]
 
-[<assembly: Guid ("1e95a279-c2a9-498b-bc72-6e7a0d6854ce")>]
+[<assembly: Guid ("5D11607A-CDB0-4270-958C-5C75F98F5122")>]
 
 [<assembly: AssemblyTitle ("Focco")>]
 

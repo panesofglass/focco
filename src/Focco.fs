@@ -97,16 +97,16 @@ module Focco =
   
   // A list of the languages that Focco supports, mapping the file extension to
   // the symbol that indicates a comment. To add another language to Focco's
-  // repertoire, add it here.
+  // repertoire, add it here. (Support for multiline comments is coming.)
   let private languages =
-    [|(".js", { Name = "javascript"; Symbol = "//"; MultilineStart = Some "/*"; MultilineEnd = Some "*/" })
-      (".fs", { Name = "fsharp"; Symbol = "//"; MultilineStart = Some "/*"; MultilineEnd = Some "*/" })
-      (".cs", { Name = "csharp"; Symbol = "//"; MultilineStart = Some "(*"; MultilineEnd = Some "*)" })
-      (".vb", { Name = "vb.net"; Symbol = "'"; MultilineStart = None; MultilineEnd = None })
-      (".sql", { Name = "sql"; Symbol = "--"; MultilineStart = None; MultilineEnd = None }) |]
+    [| (".js", { Name = "javascript"; Symbol = "//"; MultilineStart = Some "/*"; MultilineEnd = Some "*/" })
+       (".fs", { Name = "fsharp"; Symbol = "//"; MultilineStart = Some "/*"; MultilineEnd = Some "*/" })
+       (".cs", { Name = "csharp"; Symbol = "//"; MultilineStart = Some "(*"; MultilineEnd = Some "*)" })
+       (".vb", { Name = "vb.net"; Symbol = "'"; MultilineStart = None; MultilineEnd = None })
+       (".sql", { Name = "sql"; Symbol = "--"; MultilineStart = None; MultilineEnd = None }) |]
     |> dict
   
-  let private executingDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)
+  let private executingDirectory = Directory.GetCurrentDirectory()
   
   let private getTemplateType() =
     let host = RazorEngineHost(CSharpRazorCodeLanguage())

@@ -60,7 +60,7 @@ Target "BuildApp" (fun _ ->
             AssemblyVersion = version
             AssemblyTitle = projectName
             AssemblyDescription = projectSummary
-            Guid = "1e95a279-c2a9-498b-bc72-6e7a0d6854ce"
+            Guid = "5D11607A-CDB0-4270-958C-5C75F98F5122"
             OutputFileName = "./src/AssemblyInfo.fs" })
 
     MSBuild buildDir "Build" (["Configuration","Release"] @ frameworkParams) appReferences
