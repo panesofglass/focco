@@ -200,7 +200,7 @@ module Focco =
     let htmlTemplate = Activator.CreateInstance(templateType) :?> TemplateBase
 
     htmlTemplate.Title <- Path.GetFileName(source)
-    htmlTemplate.PathToCss <- Path.Combine(pathToRoot, "nocco.css").Replace('\\', '/')
+    htmlTemplate.PathToCss <- Path.Combine(pathToRoot, "focco.css").Replace('\\', '/')
     htmlTemplate.Sections <- sections |> Array.ofSeq
     htmlTemplate.Sources <- files |> Array.ofSeq
     htmlTemplate.GetSourcePath <- Func<_,_>(fun s ->
@@ -227,7 +227,7 @@ module Focco =
       failwith "At least one target must be specified"
     else
       Directory.CreateDirectory("docs") |> ignore
-      File.Copy(Path.Combine(executingDirectory, "Resources", "Focco.css"), Path.Combine("docs", "nocco.css"), true)
+      File.Copy(Path.Combine(executingDirectory, "Resources", "Focco.css"), Path.Combine("docs", "focco.css"), true)
       File.Copy(Path.Combine(executingDirectory, "Resources", "prettify.js"), Path.Combine("docs", "prettify.js"), true)
       let files =
         [ for target in targets do
