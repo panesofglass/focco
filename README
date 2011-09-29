@@ -1,15 +1,18 @@
-  ___         ___         ___        ___        ___   
-/' _ `\      / __`\      /'___\     /'___\     / __`\ 
-/\ \/\ \    /\ \_\ \    /\ \__/    /\ \__/    /\ \_\ \
-\ \_\ \_\   \ \____/    \ \____\   \ \____\   \ \____/
- \/_/\/_/    \/___/      \/____/    \/____/    \/___/ 
+  ____
+ /' ___\
+/ \  \_/_        ___         ___        ___        ___   
+ \ \  ___\      / __`\      /'___\     /'___\     / __`\ 
+  \ \ \_/      /\ \_\ \    /\ \__/    /\ \__/    /\ \_\ \
+   \ \_\       \ \____/    \ \____\   \ \____\   \ \____/
+    \/_/        \/___/      \/____/    \/____/    \/___/ 
 
-Nocco is a quick-and-dirty, literate-programming-style
+Focco is a quick-and-dirty, literate-programming-style
 documentation generator. For more information, see:
 
+http://panesofglass.github.com/focco
+
+Focco is a port of Nocco, which is a port of Docco, the original quick-and-dirty,
+literate-programming-style documentation generator written in CoffeeScript.
+
 http://dontangg.github.com/nocco
-
-Nocco is a port of Docco, the original quick-and-dirty, literate-programming-style
-documentation generator written in CoffeeScript.
-
 http://jashkenas.github.com/docco/
