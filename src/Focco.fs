@@ -36,7 +36,6 @@
 // [Pycco](http://fitzgen.github.com/pycco/).
 
 module Focco =
-
   // Import namespaces to allow us to type shorter type names.
   open System
   open System.IO
@@ -114,9 +113,6 @@ module Focco =
                        MultilineEnd = None
                        XmlDoc = None }) |]
   
-  let private executingDirectory =
-    Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)
-
   // Get the current language we're documenting, based on the extension.
   let private getLanguage source =
     let extension = Path.GetExtension source
@@ -177,7 +173,7 @@ module Focco =
   // Once all of the code is finished highlighting, we can generate the HTML file
   // and write out the documentation. Pass the completed sections into the template
   // found in `Resources/Focco.cshtml`
-  let private generateHtml source files sections =
+  let private generateHtml template files source sections =
     let destination, depth = getDestination source
     let pathToRoot = List.fold (fun pathToRoot _ -> Path.Combine("..", pathToRoot)) "" [0..(depth-1)]
   
@@ -189,43 +185,54 @@ module Focco =
       GetSourcePath = Func<_,_>(fun s ->
         Path.Combine(pathToRoot, Path.ChangeExtension(s.ToLower(), ".html").Substring(2)).Replace('\\', '/')) }
   
-    let template = File.ReadAllText(Path.Combine(executingDirectory, "Resources", "Focco.cshtml"))
     let result = RazorEngine.Razor.Parse(template, model)
     File.WriteAllText(destination, result)
   
   // Generate the documentation for a source file by reading it in, splitting it
   // up into comment/code sections, highlighting them for the appropriate language,
   // and merging them into an HTML template.
-  let private generateDocumentation files source =
+  let private generateDocumentation template files source =
     File.ReadAllLines source
     |> parse source
     |> highlight source
-    |> generateHtml source files
+    |> generateHtml template files source
   
   // Find all the files that match the pattern(s) passed in as arguments and
   // generate documentation for each one.
-  let generate (targets:string[]) =
-    if targets.Length <= 0 then
-      failwith "At least one target must be specified"
-    else
-      Directory.CreateDirectory("docs") |> ignore
-      File.Copy(sourceFileName = Path.Combine(executingDirectory, "Resources", "Focco.css"),
-                destFileName = Path.Combine("docs", "focco.css"),
-                overwrite = true)
-      File.Copy(sourceFileName = Path.Combine(executingDirectory, "Resources", "prettify.js"),
-                destFileName = Path.Combine("docs", "prettify.js"),
-                overwrite = true)
-      let files =
-        [ for target in targets do
-            yield! Directory.GetFiles(".", target, SearchOption.AllDirectories)
-                   |> Seq.filter (fun filename ->
-                      not (getLanguage(Path.GetFileName(filename)) = Unchecked.defaultof<Language>)) ]
-      for file in files do generateDocumentation files file
+  let generate (settings:Map<string,string>) (targets:string[]) =
+    Directory.CreateDirectory("docs") |> ignore
+    File.Copy(sourceFileName = Path.Combine(settings.["executingDirectory"], "Resources", "Focco.css"),
+              destFileName = Path.Combine(settings.["targetDirectory"], "focco.css"),
+              overwrite = true)
+    File.Copy(sourceFileName = Path.Combine(settings.["executingDirectory"], "Resources", "prettify.js"),
+              destFileName = Path.Combine(settings.["targetDirectory"], "prettify.js"),
+              overwrite = true)
+    let files =
+      [ for target in targets do
+          yield! Directory.GetFiles(".", target, SearchOption.AllDirectories)
+                 |> Seq.filter (fun filename ->
+                    not (getLanguage(Path.GetFileName(filename)) = Unchecked.defaultof<Language>)) ]
+    for file in files do
+      generateDocumentation settings.["template"] files file
 
 // The program entry point.
 [<EntryPoint>]
 let main args =
   if not (args.Length > 0) then
     printfn "Run focco with a filename or path with file extension, e.g. `focco.exe src\\*.fs`."
-  else Focco.generate args
+  else
+    // Put all of the configurable settings here. Eventually, these could move to parameter arguments.
+    // Note that this is a work in progress.
+    let executingDirectory =
+      System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)
+    let template = 
+      System.IO.File.ReadAllText(System.IO.Path.Combine(executingDirectory, "Resources", "Focco.cshtml"))
+    let settings =
+      Map.ofList [
+        ( "targetDirectory", "docs" )
+        ( "executingDirectory", executingDirectory )
+        ( "template", template )
+        ( "css", System.IO.Path.Combine(executingDirectory, "Resources", "Focco.css") )
+        ( "js", System.IO.Path.Combine(executingDirectory, "Resources", "prettify.js") ) ]
+    Focco.generate settings args
   0
