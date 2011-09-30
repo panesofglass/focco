@@ -1,39 +1,41 @@
-﻿// **Focco** is a quick-and-dirty, literate-programming-style documentation
-// generator. It is a F# port of [Nocco](http://dontangg.github.com/nocco/)
-// by [Don Wilson](https://github.com/dontangg/),
-// which in turn is a port of [Docco](http://jashkenas.github.com/docco/) for .NET,
-// which was written by [Jeremy Ashkenas](https://github.com/jashkenas) in
-// Coffescript and runs on node.js.
-//
-// Focco produces HTML that displays your comments alongside your code.
-// Comments are passed through
-// [Markdown](http://daringfireball.net/projects/markdown/syntax), and code is
-// highlighted using [google-code-prettify](http://code.google.com/p/google-code-prettify/)
-// syntax highlighting. This page is the result of running Focco against its
-// own source files.
-//
-// Currently, to build Focco, you'll have to have .NET 4.0 and [F# 2.0](http://github.com/fsharp/fsharp).
-// The project depends on
-// [MarkdownSharp](http://code.google.com/p/markdownsharp/) and
-// [RazorEngine](http://razorengine.codeplex.com/) (for the System.Web.Razor assembly).
-//
-// To use Focco, run it from the command-line:
-//
-//     focco *.fs
-//
-// ...will generate linked HTML documentation for the named source files, saving
-// it into a `docs` folder.
-//
-// The [source for Focco](http://github.com/panesofglass/focco) is available on GitHub, and released under the MIT license.
-// The [original source in C#](http://github.com/dontangg/nocco) is also available on GitHub.
-//
-// If **.NET** doesn't run on your platform, or you'd prefer a more convenient
-// package, get [Rocco](http://rtomayko.github.com/rocco/), the Ruby port that's
-// available as a gem. If you're writing shell scripts, try
-// [Shocco](http://rtomayko.github.com/shocco/), a port for the **POSIX shell**.
-// Both are by [Ryan Tomayko](http://github.com/rtomayko). If Python's more
-// your speed, take a look at [Nick Fitzgerald](http://github.com/fitzgen)'s
-// [Pycco](http://fitzgen.github.com/pycco/).
+﻿(*
+**Focco** is a quick-and-dirty, literate-programming-style documentation
+generator. It is a F# port of [Nocco](http://dontangg.github.com/nocco/)
+by [Don Wilson](https://github.com/dontangg/),
+which in turn is a port of [Docco](http://jashkenas.github.com/docco/) for .NET,
+which was written by [Jeremy Ashkenas](https://github.com/jashkenas) in
+Coffescript and runs on node.js.
+
+Focco produces HTML that displays your comments alongside your code.
+Comments are passed through
+[Markdown](http://daringfireball.net/projects/markdown/syntax), and code is
+highlighted using [google-code-prettify](http://code.google.com/p/google-code-prettify/)
+syntax highlighting. This page is the result of running Focco against its
+own source files.
+
+Currently, to build Focco, you'll have to have .NET 4.0 and [F# 2.0](http://github.com/fsharp/fsharp).
+The project depends on
+[MarkdownSharp](http://code.google.com/p/markdownsharp/) and
+[RazorEngine](http://razorengine.codeplex.com/) (for the System.Web.Razor assembly).
+
+To use Focco, run it from the command-line:
+
+    focco *.fs
+
+...will generate linked HTML documentation for the named source files, saving
+it into a `docs` folder.
+
+The [source for Focco](http://github.com/panesofglass/focco) is available on GitHub, and released under the MIT license.
+The [original source in C#](http://github.com/dontangg/nocco) is also available on GitHub.
+
+If **.NET** doesn't run on your platform, or you'd prefer a more convenient
+package, get [Rocco](http://rtomayko.github.com/rocco/), the Ruby port that's
+available as a gem. If you're writing shell scripts, try
+[Shocco](http://rtomayko.github.com/shocco/), a port for the **POSIX shell**.
+Both are by [Ryan Tomayko](http://github.com/rtomayko). If Python's more
+your speed, take a look at [Nick Fitzgerald](http://github.com/fitzgen)'s
+[Pycco](http://fitzgen.github.com/pycco/).
+*)
 
 module Focco =
   // Import namespaces to allow us to type shorter type names.
@@ -41,6 +43,7 @@ module Focco =
   open System.IO
   open System.Linq
   open System.Text
+  open System.Text.RegularExpressions
   
   // The language type stores each supported language,
   // as well as regex matchers to determine whether or not
@@ -50,19 +53,63 @@ module Focco =
     Singleline      : string
     MultilineStart  : string option
     MultilineEnd    : string option
-    XmlDoc          : string option } with
-    member x.CommentMatcher =
-      RegularExpressions.Regex(@"^\s*" + x.Singleline + @"\s?")
+    XmlDoc          : string option }
+    with
+    member x.SinglelineMatcher =
+      Regex(@"^\s*" + Regex.Escape x.Singleline + @"\s?")
+
+    member x.MultilineStartMatcher =
+      Option.map (fun v -> Regex(@"^\s*" + Regex.Escape v + @"\s?")) x.MultilineStart
+
+    member x.MultilineEndMatcher =
+      Option.map (fun v -> Regex(@"(?!"")" + Regex.Escape v + @"(?!"")")) x.MultilineEnd
+
     member x.CommentFilter =
       let baseRegex = @"^#![/]|^\s*#\{"
       let matchRegex =
         match x.XmlDoc with
         | Some v -> baseRegex + @"|^\s*" + v
         | _ -> baseRegex
-      RegularExpressions.Regex(sprintf "(%s)" matchRegex)
-    /// Returns true if the line matches the CommentMatcher and not the CommentFilter; otherwise, false.
-    member x.IsMatch(line) =
-      x.CommentMatcher.IsMatch(line) && not (x.CommentFilter.IsMatch(line))
+      Regex(sprintf "(%s)" matchRegex)
+
+    /// Returns true if the line matches the MultilineStartMatcher and not the CommentFilter; otherwise, false.
+    member x.IsStartingMultilineComment(line) =
+      match x.MultilineStartMatcher with
+      | Some m -> m.IsMatch(line) && not (x.CommentFilter.IsMatch(line))
+      | _ -> false
+      
+    /// Returns true if the line matches the MultilineEndMatcher and not the CommentFilter; otherwise, false.
+    member x.IsEndingMultilineComment(line) =
+      match x.MultilineEndMatcher with
+      | Some m -> m.IsMatch(line) && not (x.CommentFilter.IsMatch(line))
+      | _ -> false
+
+    /// Returns true if the line matches the SinglelineMatcher or
+    /// both the MultilineStartMatcher and MultilineEndMatcher,
+    /// excepting any matches with the CommentFilter; otherwise, false.
+    member x.IsSinglelineComment(line) =
+      not (x.CommentFilter.IsMatch(line)) &&
+      (x.SinglelineMatcher.IsMatch(line) || 
+       (x.IsStartingMultilineComment(line) &&
+        x.IsEndingMultilineComment(line)))
+
+    /// Returns the line stripped of any comment symbols.
+    member x.StripMultilineStartComment(line) =
+      match x.MultilineStartMatcher with
+      | Some m -> m.Replace(line, "")
+      | _ -> line
+
+    /// Returns the line stripped of any comment symbols.
+    member x.StripMultilineEndComment(line) =
+      match x.MultilineEndMatcher with
+      | Some m -> m.Replace(line, "")
+      | _ -> line
+
+    /// Returns the line stripped of any comment symbols.
+    member x.StripSinglelineComment(line) =
+      x.SinglelineMatcher.Replace(line, "")
+      |> x.StripMultilineStartComment
+      |> x.StripMultilineEndComment
   
   // The section stores the various sections of a file's generated markup.
   type Section = {
@@ -128,21 +175,35 @@ module Focco =
       { DocsHtml = docsText.ToString()
         CodeHtml = codeText.ToString() }
       :: sections
-    let sections, _, docsText, codeText =
-      lines |> Seq.fold (fun state line ->
-        let sections, hasCode, docsText, codeText = state
-        if language.IsMatch(line) then
+    let sections, _, _, docsText, codeText =
+      lines |> Seq.fold (fun (sections, hasCode, isMultiline, docsText:StringBuilder, codeText) line ->
+        // Capture the final multiline comment symbol, and turn off multiline comments.
+        if isMultiline && language.IsEndingMultilineComment(line) then
+          (sections, hasCode, false, docsText.AppendLine(language.StripMultilineEndComment(line)), codeText)
+        // Process the multiline comment and keep going.
+        elif isMultiline then
+          (sections, hasCode, isMultiline, docsText.AppendLine(line), codeText)
+        // Single line comment. This should come before a beginning multiline comment,
+        // because a multiline comment may also complete on the same line.
+        elif language.IsSinglelineComment(line) then
           if hasCode then
             let sections' = sections |> save docsText codeText
-            let docsText' =
-              let sb = StringBuilder()
-              in sb.AppendLine(language.CommentMatcher.Replace(line,""))
-            (sections', false, docsText', new StringBuilder())
-          else
-            (sections, hasCode, docsText.AppendLine(language.CommentMatcher.Replace(line, "")), codeText)
-        elif language.CommentFilter.IsMatch(line) then (sections, true, docsText, codeText)
-        else (sections, true, docsText, codeText.AppendLine(line)))
-        ([], false, StringBuilder(), StringBuilder())
+            let docsText' = let sb = StringBuilder() in sb.AppendLine(language.StripSinglelineComment(line))
+            (sections', false, false, docsText', new StringBuilder())
+          else (sections, hasCode, false, docsText.AppendLine(language.StripSinglelineComment(line)), codeText)
+        // We're starting a multiline comment!
+        elif language.IsStartingMultilineComment(line) then
+          if hasCode then
+            let sections' = sections |> save docsText codeText
+            let docsText' = let sb = StringBuilder() in sb.AppendLine(language.StripMultilineStartComment(line))
+            (sections', false, true, docsText', new StringBuilder())
+          else (sections, hasCode, true, docsText.AppendLine(language.StripMultilineStartComment(line)), codeText)
+        // Ignore xml doc comments.
+        elif language.CommentFilter.IsMatch(line) then
+          (sections, hasCode, isMultiline, docsText, codeText)
+        // This line has code.
+        else (sections, true, false, docsText, codeText.AppendLine(line)))
+        ([], false, false, StringBuilder(), StringBuilder())
     sections |> save docsText codeText |> List.rev
   
   // Prepares a single chunk of code for HTML output and runs the text of its
