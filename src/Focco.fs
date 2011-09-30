@@ -218,9 +218,7 @@ module Focco =
 // The program entry point.
 [<EntryPoint>]
 let main args =
-  if not (args.Length > 0) then
-    printfn "Run focco with a filename or path with file extension, e.g. `focco.exe src\\*.fs`."
-  else
+  if args.Length > 0 then
     // Put all of the configurable settings here. Eventually, these could move to parameter arguments.
     // Note that this is a work in progress.
     let executingDirectory =
@@ -235,4 +233,5 @@ let main args =
         ( "css", System.IO.Path.Combine(executingDirectory, "Resources", "Focco.css") )
         ( "js", System.IO.Path.Combine(executingDirectory, "Resources", "prettify.js") ) ]
     Focco.generate settings args
+  else printfn "Run focco with a filename or path with file extension, e.g. `focco.exe src\\*.fs`."
   0
