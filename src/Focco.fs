@@ -46,7 +46,9 @@ open System.Text
 open System.Text.RegularExpressions
 open System.Web.Razor
 open Microsoft.FSharp.Control
+open Microsoft.FSharp.Core
 open FSharp.Control
+open FSharp.IntelliSense
 
 // The language type stores each supported language,
 // as well as regex matchers to determine whether or not
@@ -267,6 +269,36 @@ let private parse source = async {
   use reader = new AsyncStreamReader(file)
   let lines = reader.ReadLines()
 
+  #if DEBUG
+  // Future parsing option for (only) F#
+  if language.Name = "fsharp" then
+      let settings =
+        StringBuilder()
+          .Append("--noframework -r:C:\\Windows\\Microsoft.NET\\Framework\\v2.0.50727\\mscorlib.dll ")
+          .Append("-r:C:\\Windows\\Microsoft.NET\\Framework\\v2.0.50727\\System.dll ")
+          .Append("-r:C:\\Windows\\Microsoft.NET\\Framework\\v2.0.50727\\System.Xml.dll ")
+          .Append("-r:C:\\Windows\\Microsoft.NET\\Framework\\v2.0.50727\\System.Runtime.Remoting.dll ")
+          .Append("-r:C:\\Windows\\Microsoft.NET\\Framework\\v2.0.50727\\System.Runtime.Serialization.Formatters.Soap.dll ")
+          .Append("-r:C:\\Windows\\Microsoft.NET\\Framework\\v2.0.50727\\System.Data.dll ")
+          .Append("-r:C:\\Windows\\Microsoft.NET\\Framework\\v2.0.50727\\System.Drawing.dll ")
+          .Append("-r:\"C:\\Program Files\\Reference Assemblies\\Microsoft\\Framework\\v3.5\\System.Core.dll\" ")
+          .Append("-r:C:\\Windows\\Microsoft.NET\\Framework\\v2.0.50727\\System.Web.dll ")
+          .Append("-r:C:\\Windows\\Microsoft.NET\\Framework\\v2.0.50727\\System.Web.Services.dll ")
+          .Append("-r:C:\\Windows\\Microsoft.NET\\Framework\\v2.0.50727\\System.Windows.Forms.dll ")
+          .Append("-r:System.Web.Razor.dll ")
+          .Append("-r:FSharp.Core.dll ")
+          .Append("-r:FSharp.AsyncExtensions.dll ")
+          .Append("-r:FSharp.PowerPack.dll ")
+          .Append("-r:FSharp.WebSnippets.Library.dll ")
+          .Append("-r:MarkdownSharp.dll ")
+          .ToString()
+      let lines = AsyncSeq.toBlockingSeq lines |> Array.ofSeq
+      let source = new SourceFile(source, String.Join(Environment.NewLine, lines), lines, settings)
+      let result = source.RunTypeCheck()
+      let tokens = source.TokenizeSource()
+      printfn "%A" tokens
+  #endif
+
   // Save is a helper function to make the code below easier to read.
   let save docsText codeText sections =
     { DocsHtml = docsText.ToString()
@@ -400,6 +432,9 @@ let generate (settings:Settings) (targets:string[]) =
 // The program entry point.
 [<EntryPoint>]
 let main args =
+  #if DEBUG
+  let args = [| "Focco.fs" |]
+  #endif
   if args.Length > 0 then
     // Put all of the configurable settings here. Eventually, these could move to parameter arguments.
     // Note that this is a work in progress.

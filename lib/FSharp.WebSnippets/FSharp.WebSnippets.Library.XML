@@ -88,6 +88,12 @@
 <member name="">
 
 </member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
 <member name="T:FSharp.IntelliSense.SourceFile">
 <summary>
  Parses the specified file using F# compiler (by calling &apos;TokenizeSource&apos;),
