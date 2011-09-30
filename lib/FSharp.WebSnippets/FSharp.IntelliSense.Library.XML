@@ -1,0 +1,873 @@
+<?xml version="1.0" encoding="utf-8"?>
+<doc>
+<assembly><name>FSharp.WebSnippets.Library</name></assembly>
+<members>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:FSharp.IntelliSense.ErrorInfo">
+<summary>
+ Represents information about error message
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:FSharp.IntelliSense.LineInfo">
+<summary>
+ Stores information about line in the source code
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:FSharp.IntelliSense.SnippetInfo">
+<summary>
+ Stores information about source code snippet
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="M:FSharp.IntelliSense.SourceFile.TokenizeSource">
+<summary>
+ Parse source file into a list of lines consisting of tokens 
+</summary>
+</member>
+<member name="M:FSharp.IntelliSense.SourceFile.RunTypeCheck(Microsoft.FSharp.Core.FSharpOption{System.Int32})">
+<summary>
+ Runs type checking and allows specifying a timeout
+</summary>
+</member>
+<member name="M:FSharp.IntelliSense.SourceFile.ProcessSourceTokens(Microsoft.FSharp.Compiler.SourceCodeServices.TypeCheckInfo,Microsoft.FSharp.Collections.FSharpList{System.Tuple`2{System.Int32,Microsoft.FSharp.Collections.FSharpList{System.Tuple`2{System.String,Microsoft.FSharp.Compiler.SourceCodeServices.TokenInformation}}}})">
+<summary>
+ When type-checking completes and we have a parsed file (as tokens), we can
+ put the information together - this processes tokens and adds information such
+ as color and tool tips (for identifiers)
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="T:FSharp.IntelliSense.SourceFile">
+<summary>
+ Parses the specified file using F# compiler (by calling &apos;TokenizeSource&apos;),
+ performs type checking (using &apos;RunTypeCheck&apos;) and then creates information
+ for the formatter (using &apos;ProcessSourceTokens&apos;)
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:FSharp.IntelliSense.TokenInfo">
+<summary>
+ Stores information about a single token (including tip &amp; color)
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="P:FSharp.IntelliSense.ToolTip.ToolTipHtml">
+<summary>
+ Returns tool tip text formatted as a HTML
+</summary>
+</member>
+<member name="M:FSharp.IntelliSense.ToolTip.TryCreate(Microsoft.FSharp.Compiler.SourceCodeServices.DataTipText)">
+<summary>
+ Creates a tool tip - returns &apos;None&apos; if it contains no data
+</summary>
+</member>
+<member name="M:FSharp.IntelliSense.ToolTip.FromString(System.String)">
+<summary>
+ Creates a tool tip - returns &apos;None&apos; if it contains no data
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:FSharp.IntelliSense.ToolTip">
+<summary>
+ Stores information about tool tip for an identifier
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="P:FSharp.IntelliSense.ToolTipFormatter.TipElements">
+<summary>
+ Returns all generated tool tip elements
+</summary>
+</member>
+<member name="M:FSharp.IntelliSense.ToolTipFormatter.FormatTip(FSharp.IntelliSense.ToolTip)">
+<summary>
+ Formats tip and returns assignments for &apos;onmouseover&apos; and &apos;onmouseout&apos;
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="T:FSharp.IntelliSense.ToolTipFormatter">
+<summary>
+ Formats tool tips in a HTML format
+ The &apos;TipElements&apos; property returns all generated HTML &lt;div&gt; elements
+ with tips (and is accumulated along the way, to avoid duplicating tips)
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="T:FSharp.IntelliSense.Colors">
+<summary>
+ A mapping from kinds of tokens to CSS classes used by the formatter
+</summary>
+</member>
+<member name="M:FSharp.IntelliSense.SourceFormatter.Format(System.IO.TextWriter,System.String,System.Boolean,Microsoft.FSharp.Collections.FSharpList{FSharp.IntelliSense.SnippetInfo})">
+<summary>
+ Generate HTML with the specified snippets
+</summary>
+</member>
+<member name="T:FSharp.IntelliSense.SourceFormatter">
+<summary>
+ Implements the main HTML generation
+</summary>
+</member>
+<member name="M:FSharp.IntelliSense.TextProcessing.shrinkOmittedParts``1(Microsoft.FSharp.Collections.FSharpList{System.Tuple`2{``0,Microsoft.FSharp.Collections.FSharpList{System.Tuple`2{System.String,Microsoft.FSharp.Compiler.SourceCodeServices.TokenInformation}}}})">
+<summary>
+ Process the whole source file and shrink all blocks marked using
+ special &apos;omit&apos; meta-comments (see the two functions above)
+</summary>
+</member>
+<member name="M:FSharp.IntelliSense.TextProcessing.shrinkLine``1(``0,Microsoft.FSharp.Collections.FSharpList{System.Tuple`2{System.String,Microsoft.FSharp.Compiler.SourceCodeServices.TokenInformation}},Microsoft.FSharp.Collections.FSharpList{System.Tuple`2{``0,Microsoft.FSharp.Collections.FSharpList{System.Tuple`2{System.String,Microsoft.FSharp.Compiler.SourceCodeServices.TokenInformation}}}})">
+<summary>
+ Find all code marked using the (*[omit:&lt;...&gt;]*) tags and replace it with 
+ a special token (named &quot;OMIT....&quot; where &quot;....&quot; is a replacement string)
+</summary>
+</member>
+<member name="M:FSharp.IntelliSense.TextProcessing.shrinkOmittedCode``1(System.Text.StringBuilder,``0,Microsoft.FSharp.Collections.FSharpList{System.Tuple`2{System.String,Microsoft.FSharp.Compiler.SourceCodeServices.TokenInformation}},Microsoft.FSharp.Collections.FSharpList{System.Tuple`2{``0,Microsoft.FSharp.Collections.FSharpList{System.Tuple`2{System.String,Microsoft.FSharp.Compiler.SourceCodeServices.TokenInformation}}}})">
+<summary>
+ Continue reading shrinked code until we reach the end (*[/omit]*) tag
+ (see the function below for more information and beginning of shrinking)
+</summary>
+</member>
+<member name="M:FSharp.IntelliSense.TextProcessing.mergeComments(Microsoft.FSharp.Collections.FSharpList{System.Tuple`2{System.String,Microsoft.FSharp.Compiler.SourceCodeServices.TokenInformation}},Microsoft.FSharp.Core.FSharpOption{System.Tuple`2{System.String,Microsoft.FSharp.Compiler.SourceCodeServices.TokenInformation}},Microsoft.FSharp.Collections.FSharpList{System.Tuple`2{System.String,Microsoft.FSharp.Compiler.SourceCodeServices.TokenInformation}})">
+<summary>
+ Preprocesses a line and merges all subsequent comments on a line 
+ into a single long comment (so that we can parse it as snippet command)
+</summary>
+</member>
+<member name="M:FSharp.IntelliSense.TextProcessing.getSnippets``1(Microsoft.FSharp.Core.FSharpOption{System.Tuple`2{System.String,Microsoft.FSharp.Collections.FSharpList{System.Tuple`2{System.Int32,``0}}}},Microsoft.FSharp.Collections.FSharpList{System.Tuple`2{System.String,Microsoft.FSharp.Collections.FSharpList{System.Tuple`2{System.Int32,``0}}}},Microsoft.FSharp.Collections.FSharpList{System.Tuple`2{System.Int32,``0}},System.String[])">
+<summary>
+ Finds special commands (comments) in the source code. If there are commands, then
+ we only generate HTML for parts of source (snippets). This function returns a list
+ of snippets. The commands should be:
+    // [snippet:Some title]
+    ... some F# code ...
+    // [/snippet]
+</summary>
+</member>
+<member name="M:FSharp.IntelliSense.TextProcessing.|StartsAndEndsWith|_|(System.String,System.String,System.String)">
+<summary>
+ Tests whether string starts with the given value (and returns rest of it)
+</summary>
+</member>
+<member name="M:FSharp.IntelliSense.TextProcessing.|StartsWith|_|(System.String,System.String)">
+<summary>
+ Tests whether string starts with the given value (and returns rest of it)
+</summary>
+</member>
+<member name="T:FSharp.IntelliSense.TextProcessing">
+
+</member>
+<member name="M:FSharp.IntelliSense.TipFormatter.formatTipWithHeader(Microsoft.FSharp.Compiler.SourceCodeServices.DataTipText)">
+<summary>
+ Formats tool-tip and turns the first line into heading
+ MonoDevelop does this automatically for completion data, 
+ so we do the same thing explicitly for hover tool-tips
+</summary>
+</member>
+<member name="M:FSharp.IntelliSense.TipFormatter.formatTip(Microsoft.FSharp.Compiler.SourceCodeServices.DataTipText)">
+<summary>
+ Format tool-tip that we get from the language service as string        
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:FSharp.IntelliSense.TipFormatter">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="M:Microsoft.FSharp.Compiler.Utils.formatException(System.Exception)">
+<summary>
+ Format an exception as a readable string with all information
+ (this also handles exceptions thrown by the F# language service)
+</summary>
+</member>
+<member name="T:Microsoft.FSharp.Compiler.Utils">
+<summary>
+ Parse a source code file, returning information about brace matching in the file
+ Return an enumeration of the matching parethetical tokens in the file
+ This function is called when the configuration is known to have changed for reasons not encoded in the CheckOptions.
+ For example, dependent references may have been deleted or created.
+ Stop the background compile.
+ Block until the background compile finishes.
+ Report a statistic for testability
+ Report a statistic for testability
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="M:Microsoft.FSharp.Compiler.SourceCodeServices.InteractiveChecker.UntypedParse(System.String,System.String,Microsoft.FSharp.Compiler.SourceCodeServices.CheckOptions)">
+<summary>
+ Parse a source code file, returning a handle that can be used for obtaining navigation bar information
+ To get the full information, call &apos;TypeCheckSource&apos; method on the result
+</summary>
+</member>
+<member name="M:Microsoft.FSharp.Compiler.SourceCodeServices.InteractiveChecker.TypeCheckSource(Microsoft.FSharp.Compiler.SourceCodeServices.UntypedParseInfo,System.String,System.Int32,System.String,Microsoft.FSharp.Compiler.SourceCodeServices.CheckOptions,Microsoft.FSharp.Compiler.SourceCodeServices.IsResultObsolete)">
+<summary>
+ Typecheck a source code file, returning a handle to the results of the parse including
+ the reconstructed types in the file.
+
+ Return None if the background builder is not yet done prepring the type check results for the antecedent to the 
+ file.
+</summary>
+</member>
+<member name="M:Microsoft.FSharp.Compiler.SourceCodeServices.InteractiveChecker.TryGetRecentTypeCheckResultsForFile(System.String,Microsoft.FSharp.Compiler.SourceCodeServices.CheckOptions)">
+<summary>
+ Try to get recent type check results for a file. This may arbitrarily refuse to return any
+ results if the InteractiveChecker would like a chance to recheck the file, in which case
+ UntypedParse and TypeCheckSource should be called. If the source of the file
+ has changed the results returned by this function may be out of date, though may
+ still be usable for generating intellsense menus and information.
+</summary>
+</member>
+<member name="M:Microsoft.FSharp.Compiler.SourceCodeServices.InteractiveChecker.StartBackgroundCompile``1(Microsoft.FSharp.Compiler.SourceCodeServices.CheckOptions)">
+<summary>
+ Begin background parsing the given project.
+</summary>
+</member>
+<member name="M:Microsoft.FSharp.Compiler.SourceCodeServices.InteractiveChecker.GetCheckOptionsFromScriptRoot(System.String,System.String)">
+<summary>
+ For a given script file, get the CheckOptions implied by the #load closure
+</summary>
+</member>
+<member name="M:Microsoft.FSharp.Compiler.SourceCodeServices.InteractiveChecker.Create(Microsoft.FSharp.Core.FSharpFunc`2{System.String,Microsoft.FSharp.Core.Unit})">
+<summary>
+ Crate an instance of the wrapper
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="P:Microsoft.FSharp.Compiler.SourceCodeServices.TypeCheckResults.TypeCheckInfo">
+<summary>
+ A handle to type information gleaned from typechecking the file. 
+</summary>
+</member>
+<member name="P:Microsoft.FSharp.Compiler.SourceCodeServices.TypeCheckResults.Errors">
+<summary>
+ The errors returned by parsing a source file
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="T:Microsoft.FSharp.Compiler.SourceCodeServices.TypeCheckResults">
+<summary>
+ A handle to the results of TypeCheckSource
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:Microsoft.FSharp.Compiler.SourceCodeServices.ErrorInfo">
+<summary>
+ Resolve the names at the given location to give F1 keyword
+ Resolve the names at the given location to the declaration location of the corresponding construct
+ A version of `GetDeclarationLocation` augmented with the option (via the `bool`) parameter to force .fsi generation (even if source exists); this is primarily for testing
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="M:Microsoft.FSharp.Compiler.SourceCodeServices.TypeCheckInfo.GetDeclarations(System.Tuple`2{System.Int32,System.Int32},System.String,System.Tuple`2{Microsoft.FSharp.Collections.FSharpList{System.String},System.String},System.Int32)">
+<summary>
+ Resolve the names at the given location to a set of declarations
+</summary>
+</member>
+<member name="M:Microsoft.FSharp.Compiler.SourceCodeServices.TypeCheckInfo.GetDataTipText(System.Tuple`2{System.Int32,System.Int32},System.String,Microsoft.FSharp.Collections.FSharpList{System.String},System.Int32)">
+<summary>
+ Resolve the names at the given location to give a data tip 
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:Microsoft.FSharp.Compiler.SourceCodeServices.Severity">
+<summary>
+ Name of the file for which this information were created
+ Get declaraed items and the selected item at the specified location
+ Return the inner-most range associated with a possible breakpoint location
+ When these files change then the build is invalid
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:Microsoft.FSharp.Compiler.SourceCodeServices.IsResultObsolete">
+<summary>
+ Callback that indicates whether a requested result has become obsolete.    
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:Microsoft.FSharp.Compiler.SourceCodeServices.PrettyNaming">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:Microsoft.FSharp.Compiler.SourceCodeServices.List">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:Microsoft.FSharp.Compiler.SourceCodeServices.Array">
+
+</member>
+<member name="T:Microsoft.FSharp.Compiler.SourceCodeServices">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:Microsoft.FSharp.Compiler.Server.Shared">
+
+</member>
+<member name="T:Microsoft.FSharp.Compiler.Server">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:Microsoft.FSharp.Compiler.Reflection.FSharpCompilerServerShared">
+<summary>
+ Wrapper type for the &apos;FSharp.Compiler.Server.Shared.dll&apos; assembly - expose types we use
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:Microsoft.FSharp.Compiler.Reflection.FSharpCompiler">
+<summary>
+ Wrapper type for the &apos;FSharp.Compiler.dll&apos; assembly - expose types we use
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:Microsoft.FSharp.Compiler.Reflection">
+<summary>
+ Implements the (?) operator that makes it possible to access internal methods
+ and properties and contains definitions for F# assemblies
+</summary>
+</member>
+</members>
+</doc>
