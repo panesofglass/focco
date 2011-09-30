@@ -34,31 +34,24 @@
 // Both are by [Ryan Tomayko](http://github.com/rtomayko). If Python's more
 // your speed, take a look at [Nick Fitzgerald](http://github.com/fitzgen)'s
 // [Pycco](http://fitzgen.github.com/pycco/).
+
 module Focco =
 
   // Import namespaces to allow us to type shorter type names.
   open System
-  open System.CodeDom.Compiler
   open System.IO
   open System.Linq
   open System.Text
-  open System.Web.Razor
-
-  //### Helpers & Setup
-
-  // In F#, literate means bottom up. You have to define what you want to use
-  // before you use it. Therefore, we start with the helpers and setup
-  // then get into the more meaty generation.
-
+  
   // The language type stores each supported language,
   // as well as regex matchers to determine whether or not
   // a given file matches a supported language.
   type Language = {
-    Name : string
-    Singleline : string
-    MultilineStart : string option
-    MultilineEnd : string option
-    XmlDoc : string option } with
+    Name            : string
+    Singleline      : string
+    MultilineStart  : string option
+    MultilineEnd    : string option
+    XmlDoc          : string option } with
     member x.CommentMatcher =
       RegularExpressions.Regex(@"^\s*" + x.Singleline + @"\s?")
     member x.CommentFilter =
@@ -77,38 +70,19 @@ module Focco =
     CodeHtml : string
     DocsHtml : string }
   
-  // The template base class for the rendering via Razor.
-  [<AbstractClass>]
-  type TemplateBase() =
-    let mutable buffer = new StringBuilder()
-    let mutable title : string = null
-    let mutable pathToCss : string = null
-    let mutable getSourcePath : Func<string,string> = null
-    let mutable sections : Section[] = null
-    let mutable sources : string[] = null
-    member x.Buffer
-      with get() = buffer
-      and  set(value) = buffer <- value
-    member x.Title
-      with get() = title
-      and  set(value) = title <- value
-    member x.PathToCss
-      with get() = pathToCss
-      and  set(value) = pathToCss <- value
-    member x.GetSourcePath
-      with get() = getSourcePath
-      and  set(value) = getSourcePath <- value
-    member x.Sections
-      with get() = sections
-      and  set(value) = sections <- value
-    member x.Sources
-      with get() = sources
-      and  set(value) = sources <- value
-    abstract Execute : unit -> unit
-    abstract WriteLiteral : obj -> unit
-    default x.WriteLiteral(value) = x.Buffer.Append(value) |> ignore
-    abstract Write : obj -> unit
-    default x.Write(value) = x.WriteLiteral(value)
+  // The model used to generate html with [RazorEngine](http://razorengine.codeplex.com/).
+  type Model = {
+    Title         : string
+    PathToCss     : string
+    GetSourcePath : Func<string, string>
+    Sections      : Section[]
+    Sources       : string[] }
+
+  //### Helpers & Setup
+
+  // In F#, literate means bottom up. You have to define what you want to use
+  // before you use it. Therefore, we start with the helpers and setup
+  // then get into the more meaty generation.
   
   // A list of the languages that Focco supports, mapping the file extension to
   // the symbol that indicates a comment. To add another language to Focco's
@@ -143,43 +117,6 @@ module Focco =
   let private executingDirectory =
     Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)
 
-  // Setup the Razor templating engine so that we can quickly pass the data in
-  // and generate HTML.
-  //
-  // The file `Resources\Focco.cshtml` is read and compiled into a new dll
-  // with a type that extends the `TemplateBase` class. This new assembly is
-  // loaded so that we can create an instance and pass data into it
-  // and generate the HTML.
-  let private getTemplateType() =
-    let host = RazorEngineHost(CSharpRazorCodeLanguage())
-    host.DefaultBaseClass <- typeof<TemplateBase>.FullName
-    host.DefaultNamespace <- "RazorOutput"
-    host.DefaultClassName <- "Template"
-    host.NamespaceImports.Add("System") |> ignore
-  
-    use reader = new StreamReader(Path.Combine(executingDirectory, "Resources", "Focco.cshtml"))
-    let razorResult = RazorTemplateEngine(host).GenerateCode(reader)
-  
-    let compilerParams =
-      CompilerParameters(
-        GenerateInMemory = true,
-        GenerateExecutable = false,
-        IncludeDebugInformation = false,
-        CompilerOptions = "/target:library /optimize")
-    compilerParams.ReferencedAssemblies.
-      Add(typeof<TemplateBase>.Assembly.CodeBase.Replace("file:///","").Replace("/","\\")) |> ignore
-  
-    let codeProvider = new Microsoft.CSharp.CSharpCodeProvider()
-    let results = codeProvider.CompileAssemblyFromDom(compilerParams, razorResult.GeneratedCode)
-  
-    // Check for errors that may have occurred during template generation.
-    if results.Errors.HasErrors then
-      results.Errors.OfType<CompilerError>()
-      |> Seq.filter (fun x -> not x.IsWarning)
-      |> Seq.iter (fun x -> printfn "Error compiling template: (%d, %d) %s" x.Line x.Column x.ErrorText)
-  
-    results.CompiledAssembly.GetType("RazorOutput.Template")
-  
   // Get the current language we're documenting, based on the extension.
   let private getLanguage source =
     let extension = Path.GetExtension source
@@ -244,18 +181,17 @@ module Focco =
     let destination, depth = getDestination source
     let pathToRoot = List.fold (fun pathToRoot _ -> Path.Combine("..", pathToRoot)) "" [0..(depth-1)]
   
-    let templateType = getTemplateType()
-    let htmlTemplate = Activator.CreateInstance(templateType) :?> TemplateBase
-
-    htmlTemplate.Title <- Path.GetFileName(source)
-    htmlTemplate.PathToCss <- Path.Combine(pathToRoot, "focco.css").Replace('\\', '/')
-    htmlTemplate.Sections <- sections |> Array.ofSeq
-    htmlTemplate.Sources <- files |> Array.ofSeq
-    htmlTemplate.GetSourcePath <- Func<_,_>(fun s ->
-      Path.Combine(pathToRoot, Path.ChangeExtension(s.ToLower(), ".html").Substring(2)).Replace('\\', '/'))
+    let model = {
+      Title = Path.GetFileName(source)
+      PathToCss = Path.Combine(pathToRoot, "focco.css").Replace('\\', '/')
+      Sections = sections |> Array.ofSeq
+      Sources = files |> Array.ofSeq
+      GetSourcePath = Func<_,_>(fun s ->
+        Path.Combine(pathToRoot, Path.ChangeExtension(s.ToLower(), ".html").Substring(2)).Replace('\\', '/')) }
   
-    htmlTemplate.Execute()
-    File.WriteAllText(destination, htmlTemplate.Buffer.ToString())
+    let template = File.ReadAllText(Path.Combine(executingDirectory, "Resources", "Focco.cshtml"))
+    let result = RazorEngine.Razor.Parse(template, model)
+    File.WriteAllText(destination, result)
   
   // Generate the documentation for a source file by reading it in, splitting it
   // up into comment/code sections, highlighting them for the appropriate language,
@@ -293,4 +229,3 @@ let main args =
     printfn "Run focco with a filename or path with file extension, e.g. `focco.exe src\\*.fs`."
   else Focco.generate args
   0
-
