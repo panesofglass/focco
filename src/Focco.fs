@@ -43,6 +43,8 @@ open System.IO
 open System.Linq
 open System.Text
 open System.Text.RegularExpressions
+open Microsoft.FSharp.Control
+open FSharp.Control
 
 // The language type stores each supported language,
 // as well as regex matchers to determine whether or not
@@ -137,6 +139,17 @@ type Settings = {
 // before you use it. Therefore, we start with the helpers and setup
 // then get into the more meaty generation.
 
+// Extend AsyncStreamReader with a method to read all the lines in the stream as an AsyncSeq.
+type AsyncStreamReader with
+  member reader.ReadLines() =
+    let rec loop (reader:AsyncStreamReader) = asyncSeq {
+      let! ``at the end of the stream`` = reader.EndOfStream
+      if not ``at the end of the stream`` then
+        let! line = reader.ReadLine()
+        yield line
+        yield! loop reader }
+    loop reader
+
 // A list of the languages that Focco supports, mapping the file extension to
 // the symbol that indicates a comment. To add another language to Focco's
 // repertoire, add it here. (Support for multiline comments is coming.)
@@ -176,14 +189,26 @@ let private getLanguage source =
 
 // Given a string of source code, parse out each comment and the code that
 // follows it, and create an individual `Section` for it.
-let private parse source lines =
+let private parse source = async {
   let language = getLanguage(source)
+
+  // Open the file and generate the sequence of lines asynchronously.
+  use file = new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.Read ||| FileShare.Inheritable, 1024, true)
+  use reader = new AsyncStreamReader(file)
+  let lines = reader.ReadLines()
+
+  // Save is a helper function to make the code below easier to read.
   let save docsText codeText sections =
     { DocsHtml = docsText.ToString()
       CodeHtml = codeText.ToString() }
     :: sections
-  let sections, _, _, docsText, codeText =
-    lines |> Seq.fold (fun (sections, hasCode, isMultiline, docsText:StringBuilder, codeText) line ->
+
+  // Asynchronously fold over the lines and retrieve the final state,
+  // consisting of the identified sections and any remaining docs or code text.
+  let! sections, _, _, docsText, codeText =
+    lines |> AsyncSeq.fold (fun current line ->
+      // Unpack the current state values.
+      let sections, hasCode, isMultiline, (docsText:StringBuilder), codeText = current 
       // Capture the final multiline comment symbol, and turn off multiline comments.
       if isMultiline && language.IsEndingMultilineComment(line) then
         (sections, hasCode, false, docsText.AppendLine(language.StripMultilineEndComment(line)), codeText)
@@ -197,26 +222,30 @@ let private parse source lines =
           let sections' = sections |> save docsText codeText
           let docsText' = let sb = StringBuilder() in sb.AppendLine(language.StripSinglelineComment(line))
           (sections', false, false, docsText', new StringBuilder())
-        else (sections, hasCode, false, docsText.AppendLine(language.StripSinglelineComment(line)), codeText)
+        else
+          (sections, hasCode, false, docsText.AppendLine(language.StripSinglelineComment(line)), codeText)
       // We're starting a multiline comment!
       elif language.IsStartingMultilineComment(line) then
         if hasCode then
           let sections' = sections |> save docsText codeText
           let docsText' = let sb = StringBuilder() in sb.AppendLine(language.StripMultilineStartComment(line))
           (sections', false, true, docsText', new StringBuilder())
-        else (sections, hasCode, true, docsText.AppendLine(language.StripMultilineStartComment(line)), codeText)
+        else
+          (sections, hasCode, true, docsText.AppendLine(language.StripMultilineStartComment(line)), codeText)
       // Ignore xml doc comments.
       elif language.CommentFilter.IsMatch(line) then
         (sections, hasCode, isMultiline, docsText, codeText)
       // This line has code.
-      else (sections, true, false, docsText, codeText.AppendLine(line)))
+      else (sections, true, false, docsText, codeText.AppendLine(line)) )
       ([], false, false, StringBuilder(), StringBuilder())
-  sections |> save docsText codeText |> List.rev
+
+  // Add the remaining items to the sections list, then reverse it back into the correct order.
+  return sections |> save docsText codeText |> List.rev }
 
 // Prepares a single chunk of code for HTML output and runs the text of its
 // corresponding comment through **Markdown**, using a C# implementation
 // called [MarkdownSharp](http://code.google.com/p/markdownsharp/).
-let private highlight source sections =
+let private highlight sections =
   let markdown = MarkdownSharp.Markdown()
   sections |> Seq.map (fun section ->
     { section with
@@ -241,7 +270,7 @@ let private getDestination filepath =
 // Once all of the code is finished highlighting, we can generate the HTML file
 // and write out the documentation. Pass the completed sections into the template
 // found in `Resources/Focco.cshtml`
-let private generateHtml template files source sections =
+let private generateHtml template files source sections = async {
   let destination, depth = getDestination source
   let pathToRoot = List.fold (fun pathToRoot _ -> Path.Combine("..", pathToRoot)) "" [0..(depth-1)]
 
@@ -253,35 +282,46 @@ let private generateHtml template files source sections =
     GetSourcePath = Func<_,_>(fun s ->
       Path.Combine(pathToRoot, Path.ChangeExtension(s.ToLower(), ".html").Substring(2)).Replace('\\', '/')) }
 
+  // Switch to the thread pool to generate and write the results to the destination file.
+  do! Async.SwitchToThreadPool()
   let result = RazorEngine.Razor.Parse(template, model)
-  File.WriteAllText(destination, result)
+  File.WriteAllText(destination, result) }
 
 // Generate the documentation for a source file by reading it in, splitting it
 // up into comment/code sections, highlighting them for the appropriate language,
 // and merging them into an HTML template.
-let private generateDocumentation template files source =
-  File.ReadAllLines source
-  |> parse source
-  |> highlight source
-  |> generateHtml template files source
+let private generateDocumentation template files source = async {
+  let! sections = parse source
+  do! highlight sections
+      |> generateHtml template files source
+  return source }
 
 // Find all the files that match the pattern(s) passed in as arguments and
 // generate documentation for each one.
 let generate (settings:Settings) (targets:string[]) =
-  Directory.CreateDirectory("docs") |> ignore
+  // Create the target directory and copy in the stylesheet and javascript files. 
+  Directory.CreateDirectory(settings.TargetDirectory) |> ignore
   File.Copy(sourceFileName = Path.Combine(settings.ResourcesPath, settings.StyleSheet),
             destFileName = Path.Combine(settings.TargetDirectory, settings.StyleSheet),
             overwrite = true)
   File.Copy(sourceFileName = Path.Combine(settings.ResourcesPath, settings.Script), 
             destFileName = Path.Combine(settings.TargetDirectory, settings.Script), 
             overwrite = true)
+
+  // Collect all the files in the targets.
   let files =
     [ for target in targets do
         yield! Directory.GetFiles(".", target, SearchOption.AllDirectories)
                |> Seq.filter (fun filename ->
                   not (getLanguage(Path.GetFileName(filename)) = Unchecked.defaultof<Language>)) ]
-  for file in files do
-    generateDocumentation settings.Template files file
+
+  // For each file found, create an asynchronous task to generate the output file,
+  // then run them all in parallel.
+  files
+  |> List.map (generateDocumentation settings.Template files)
+  |> Async.Parallel
+  |> Async.RunSynchronously
+  |> printfn "Successfully processed the following files: %A"
 
 // The program entry point.
 [<EntryPoint>]

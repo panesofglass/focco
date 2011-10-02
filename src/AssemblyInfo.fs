@@ -24,9 +24,9 @@ exception ReturnNoneException183c26a427ae489c8fd92ec21a0c9a59
 
 [<assembly: AssemblyProduct ("Focco")>]
 
-[<assembly: AssemblyVersion ("0.1.110930")>]
+[<assembly: AssemblyVersion ("0.1.111003")>]
 
-[<assembly: AssemblyFileVersion ("0.1.110930")>]
+[<assembly: AssemblyFileVersion ("0.1.111003")>]
 
 [<assembly: AssemblyDelaySign (false)>]
 
