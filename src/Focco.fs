@@ -39,10 +39,12 @@ your speed, take a look at [Nick Fitzgerald](http://github.com/fitzgen)'s
 
 // Import namespaces to allow us to type shorter type names.
 open System
+open System.CodeDom.Compiler
 open System.IO
 open System.Linq
 open System.Text
 open System.Text.RegularExpressions
+open System.Web.Razor
 open Microsoft.FSharp.Control
 open FSharp.Control
 
@@ -117,21 +119,47 @@ type Section = {
   CodeHtml : string
   DocsHtml : string }
 
-// The model used to generate html with [RazorEngine](http://razorengine.codeplex.com/).
-type Model = {
-  Title         : string
-  PathToCss     : string
-  GetSourcePath : Func<string, string>
-  Sections      : Section[]
-  Sources       : string[] }
-
+// Stores the settings for rendering documentation.
 type Settings = {
   ExecutingDirectory : string
   ResourcesPath : string
   TargetDirectory : string
-  Template : string
+  TemplateType : Type
   StyleSheet : string
   Script : string }
+
+// The template base class for the rendering via Razor.
+[<AbstractClass>]
+type TemplateBase() =
+  let mutable buffer = new StringBuilder()
+  let mutable title : string = null
+  let mutable pathToCss : string = null
+  let mutable getSourcePath : Func<string,string> = null
+  let mutable sections : Section[] = null
+  let mutable sources : string[] = null
+  member x.Buffer
+    with get() = buffer
+    and  set(value) = buffer <- value
+  member x.Title
+    with get() = title
+    and  set(value) = title <- value
+  member x.PathToCss
+    with get() = pathToCss
+    and  set(value) = pathToCss <- value
+  member x.GetSourcePath
+    with get() = getSourcePath
+    and  set(value) = getSourcePath <- value
+  member x.Sections
+    with get() = sections
+    and  set(value) = sections <- value
+  member x.Sources
+    with get() = sources
+    and  set(value) = sources <- value
+  abstract Execute : unit -> unit
+  abstract WriteLiteral : obj -> unit
+  default x.WriteLiteral(value) = x.Buffer.Append(value) |> ignore
+  abstract Write : obj -> unit
+  default x.Write(value) = x.WriteLiteral(value)
 
 //### Helpers & Setup
 
@@ -186,6 +214,43 @@ let private getLanguage source =
   if languages.ContainsKey(extension)
     then languages.[extension]
     else Unchecked.defaultof<Language>
+
+// Setup the Razor templating engine so that we can quickly pass the data in
+// and generate HTML.
+//
+// The file `Resources\Focco.cshtml` is read and compiled into a new dll
+// with a type that extends the `TemplateBase` class. This new assembly is
+// loaded so that we can create an instance and pass data into it
+// and generate the HTML.
+let private getTemplateType executingDirectory =
+  let host = RazorEngineHost(CSharpRazorCodeLanguage())
+  host.DefaultBaseClass <- typeof<TemplateBase>.FullName
+  host.DefaultNamespace <- "RazorOutput"
+  host.DefaultClassName <- "Template"
+  host.NamespaceImports.Add("System") |> ignore
+
+  use reader = new StreamReader(Path.Combine(executingDirectory, "Resources", "Focco.cshtml"))
+  let razorResult = RazorTemplateEngine(host).GenerateCode(reader)
+
+  let compilerParams =
+    CompilerParameters(
+      GenerateInMemory = true,
+      GenerateExecutable = false,
+      IncludeDebugInformation = false,
+      CompilerOptions = "/target:library /optimize")
+  compilerParams.ReferencedAssemblies.
+    Add(typeof<TemplateBase>.Assembly.CodeBase.Replace("file:///","").Replace("/","\\")) |> ignore
+
+  let codeProvider = new Microsoft.CSharp.CSharpCodeProvider()
+  let results = codeProvider.CompileAssemblyFromDom(compilerParams, razorResult.GeneratedCode)
+
+  // Check for errors that may have occurred during template generation.
+  if results.Errors.HasErrors then
+    results.Errors.OfType<CompilerError>()
+    |> Seq.filter (fun x -> not x.IsWarning)
+    |> Seq.iter (fun x -> printfn "Error compiling template: (%d, %d) %s" x.Line x.Column x.ErrorText)
+
+  results.CompiledAssembly.GetType("RazorOutput.Template")
 
 // Given a string of source code, parse out each comment and the code that
 // follows it, and create an individual `Section` for it.
@@ -270,30 +335,31 @@ let private getDestination filepath =
 // Once all of the code is finished highlighting, we can generate the HTML file
 // and write out the documentation. Pass the completed sections into the template
 // found in `Resources/Focco.cshtml`
-let private generateHtml template files source sections = async {
+let private generateHtml (templateType:Type) files source sections = async {
   let destination, depth = getDestination source
   let pathToRoot = List.fold (fun pathToRoot _ -> Path.Combine("..", pathToRoot)) "" [0..(depth-1)]
+  
+  let htmlTemplate = Activator.CreateInstance(templateType) :?> TemplateBase
 
-  let model = {
-    Title = Path.GetFileName(source)
-    PathToCss = Path.Combine(pathToRoot, "focco.css").Replace('\\', '/')
-    Sections = sections |> Array.ofSeq
-    Sources = files |> Array.ofSeq
-    GetSourcePath = Func<_,_>(fun s ->
-      Path.Combine(pathToRoot, Path.ChangeExtension(s.ToLower(), ".html").Substring(2)).Replace('\\', '/')) }
+  htmlTemplate.Title <- Path.GetFileName(source)
+  htmlTemplate.PathToCss <- Path.Combine(pathToRoot, "focco.css").Replace('\\', '/')
+  htmlTemplate.Sections <- sections |> Array.ofSeq
+  htmlTemplate.Sources <- files |> Array.ofSeq
+  htmlTemplate.GetSourcePath <- Func<_,_>(fun s ->
+    Path.Combine(pathToRoot, Path.ChangeExtension(s.ToLower(), ".html").Substring(2)).Replace('\\', '/'))
 
   // Switch to the thread pool to generate and write the results to the destination file.
   do! Async.SwitchToThreadPool()
-  let result = RazorEngine.Razor.Parse(template, model)
-  File.WriteAllText(destination, result) }
+  htmlTemplate.Execute()
+  File.WriteAllText(destination, htmlTemplate.Buffer.ToString()) }
 
 // Generate the documentation for a source file by reading it in, splitting it
 // up into comment/code sections, highlighting them for the appropriate language,
 // and merging them into an HTML template.
-let private generateDocumentation template files source = async {
+let private generateDocumentation templateType files source = async {
   let! sections = parse source
   do! highlight sections
-      |> generateHtml template files source
+      |> generateHtml templateType files source
   return source }
 
 // Find all the files that match the pattern(s) passed in as arguments and
@@ -318,7 +384,7 @@ let generate (settings:Settings) (targets:string[]) =
   // For each file found, create an asynchronous task to generate the output file,
   // then run them all in parallel.
   files
-  |> List.map (generateDocumentation settings.Template files)
+  |> List.map (generateDocumentation settings.TemplateType files)
   |> Async.Parallel
   |> Async.RunSynchronously
   |> printfn "Successfully processed the following files: %A"
@@ -336,7 +402,7 @@ let main args =
         ExecutingDirectory = executingDirectory
         ResourcesPath = resourcesPath
         TargetDirectory = "docs"
-        Template = template
+        TemplateType = getTemplateType executingDirectory
         StyleSheet = "focco.css"
         Script = "prettify.js" }
     generate settings args
