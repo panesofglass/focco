@@ -125,15 +125,17 @@ type Settings = {
   ResourcesPath : string
   TargetDirectory : string
   TemplateType : Type
-  StyleSheet : string
-  Script : string }
+  Stylesheets : string[]
+  Scripts : string[] }
 
 // The template base class for the rendering via Razor.
 [<AbstractClass>]
 type TemplateBase() =
   let mutable buffer = new StringBuilder()
   let mutable title : string = null
-  let mutable pathToCss : string = null
+  let mutable pathToResources : string = null
+  let mutable stylesheets : string[] = null
+  let mutable scripts : string[] = null
   let mutable getSourcePath : Func<string,string> = null
   let mutable sections : Section[] = null
   let mutable sources : string[] = null
@@ -143,9 +145,12 @@ type TemplateBase() =
   member x.Title
     with get() = title
     and  set(value) = title <- value
-  member x.PathToCss
-    with get() = pathToCss
-    and  set(value) = pathToCss <- value
+  member x.Stylesheets
+    with get() = stylesheets
+    and  set(value) = stylesheets <- value
+  member x.Scripts
+    with get() = scripts
+    and  set(value) = scripts <- value
   member x.GetSourcePath
     with get() = getSourcePath
     and  set(value) = getSourcePath <- value
@@ -180,7 +185,7 @@ type AsyncStreamReader with
 
 // A list of the languages that Focco supports, mapping the file extension to
 // the symbol that indicates a comment. To add another language to Focco's
-// repertoire, add it here. (Support for multiline comments is coming.)
+// repertoire, add it here.
 let private languages =
   dict [| (".js",  { Name = "javascript"
                      Singleline = "//"
@@ -335,14 +340,15 @@ let private getDestination filepath =
 // Once all of the code is finished highlighting, we can generate the HTML file
 // and write out the documentation. Pass the completed sections into the template
 // found in `Resources/Focco.cshtml`
-let private generateHtml (templateType:Type) files source sections = async {
+let private generateHtml (settings:Settings) files source sections = async {
   let destination, depth = getDestination source
   let pathToRoot = List.fold (fun pathToRoot _ -> Path.Combine("..", pathToRoot)) "" [0..(depth-1)]
   
-  let htmlTemplate = Activator.CreateInstance(templateType) :?> TemplateBase
+  let htmlTemplate = Activator.CreateInstance(settings.TemplateType) :?> TemplateBase
 
   htmlTemplate.Title <- Path.GetFileName(source)
-  htmlTemplate.PathToCss <- Path.Combine(pathToRoot, "focco.css").Replace('\\', '/')
+  htmlTemplate.Stylesheets <- Array.map (fun x -> Path.Combine(pathToRoot, x).Replace('\\', '/')) settings.Stylesheets
+  htmlTemplate.Scripts <- Array.map (fun x -> Path.Combine(pathToRoot, x).Replace('\\', '/')) settings.Scripts
   htmlTemplate.Sections <- sections |> Array.ofSeq
   htmlTemplate.Sources <- files |> Array.ofSeq
   htmlTemplate.GetSourcePath <- Func<_,_>(fun s ->
@@ -356,10 +362,10 @@ let private generateHtml (templateType:Type) files source sections = async {
 // Generate the documentation for a source file by reading it in, splitting it
 // up into comment/code sections, highlighting them for the appropriate language,
 // and merging them into an HTML template.
-let private generateDocumentation templateType files source = async {
+let private generateDocumentation settings files source = async {
   let! sections = parse source
   do! highlight sections
-      |> generateHtml templateType files source
+      |> generateHtml settings files source
   return source }
 
 // Find all the files that match the pattern(s) passed in as arguments and
@@ -367,12 +373,14 @@ let private generateDocumentation templateType files source = async {
 let generate (settings:Settings) (targets:string[]) =
   // Create the target directory and copy in the stylesheet and javascript files. 
   Directory.CreateDirectory(settings.TargetDirectory) |> ignore
-  File.Copy(sourceFileName = Path.Combine(settings.ResourcesPath, settings.StyleSheet),
-            destFileName = Path.Combine(settings.TargetDirectory, settings.StyleSheet),
-            overwrite = true)
-  File.Copy(sourceFileName = Path.Combine(settings.ResourcesPath, settings.Script), 
-            destFileName = Path.Combine(settings.TargetDirectory, settings.Script), 
-            overwrite = true)
+  for stylesheet in settings.Stylesheets do
+    File.Copy(sourceFileName = Path.Combine(settings.ResourcesPath, stylesheet),
+              destFileName = Path.Combine(settings.TargetDirectory, stylesheet),
+              overwrite = true)
+  for script in settings.Scripts do
+    File.Copy(sourceFileName = Path.Combine(settings.ResourcesPath, script), 
+              destFileName = Path.Combine(settings.TargetDirectory, script), 
+              overwrite = true)
 
   // Collect all the files in the targets.
   let files =
@@ -384,7 +392,7 @@ let generate (settings:Settings) (targets:string[]) =
   // For each file found, create an asynchronous task to generate the output file,
   // then run them all in parallel.
   files
-  |> List.map (generateDocumentation settings.TemplateType files)
+  |> List.map (generateDocumentation settings files)
   |> Async.Parallel
   |> Async.RunSynchronously
   |> printfn "Successfully processed the following files: %A"
@@ -403,8 +411,8 @@ let main args =
         ResourcesPath = resourcesPath
         TargetDirectory = "docs"
         TemplateType = getTemplateType executingDirectory
-        StyleSheet = "focco.css"
-        Script = "prettify.js" }
+        Stylesheets = [| "focco.css" |]
+        Scripts = [| "prettify.js" |] }
     generate settings args
   else printfn "Run focco with a filename or path with file extension, e.g. `focco.exe src\\*.fs`."
   0
