@@ -38,15 +38,15 @@
   </PropertyGroup>
   <Import Project="..\lib\FSharp\Microsoft.FSharp.Targets" />
   <ItemGroup>
-    <Content Include="Resources\Focco.cshtml">
+    <EmbeddedResource Include="Resources\Focco.cshtml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Resources\Focco.css">
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\Focco.css">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Resources\prettify.js">
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\prettify.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    </EmbeddedResource>
     <Compile Include="Focco.fs" />
     <None Include="App.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

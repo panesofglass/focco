@@ -121,12 +121,10 @@ type Section = {
 
 // Stores the settings for rendering documentation.
 type Settings = {
-  ExecutingDirectory : string
-  ResourcesPath : string
-  TargetDirectory : string
-  TemplateType : Type
+  Scripts : string[]
   Stylesheets : string[]
-  Scripts : string[] }
+  TargetDirectory : string
+  TemplateName : string }
 
 // The template base class for the rendering via Razor.
 [<AbstractClass>]
@@ -136,6 +134,7 @@ type TemplateBase() =
   let mutable pathToResources : string = null
   let mutable stylesheets : string[] = null
   let mutable scripts : string[] = null
+  let mutable getResourcePath : Func<string, string> = null
   let mutable getSourcePath : Func<string,string> = null
   let mutable sections : Section[] = null
   let mutable sources : string[] = null
@@ -151,6 +150,9 @@ type TemplateBase() =
   member x.Scripts
     with get() = scripts
     and  set(value) = scripts <- value
+  member x.GetResourcePath
+    with get() = getResourcePath
+    and  set(value) = getResourcePath <- value
   member x.GetSourcePath
     with get() = getSourcePath
     and  set(value) = getSourcePath <- value
@@ -171,17 +173,6 @@ type TemplateBase() =
 // In F#, literate means bottom up. You have to define what you want to use
 // before you use it. Therefore, we start with the helpers and setup
 // then get into the more meaty generation.
-
-// Extend AsyncStreamReader with a method to read all the lines in the stream as an AsyncSeq.
-type AsyncStreamReader with
-  member reader.ReadLines() =
-    let rec loop (reader:AsyncStreamReader) = asyncSeq {
-      let! ``at the end of the stream`` = reader.EndOfStream
-      if not ``at the end of the stream`` then
-        let! line = reader.ReadLine()
-        yield line
-        yield! loop reader }
-    loop reader
 
 // A list of the languages that Focco supports, mapping the file extension to
 // the symbol that indicates a comment. To add another language to Focco's
@@ -220,6 +211,24 @@ let private getLanguage source =
     then languages.[extension]
     else Unchecked.defaultof<Language>
 
+// Helper function to copy resource files into the target directory from embedded resources.
+let private copyResources (settings : Settings) =
+  Directory.CreateDirectory settings.TargetDirectory |> ignore
+  for resource in seq { yield! settings.Scripts; yield! settings.Stylesheets } do
+    let outputFile = Path.Combine(settings.TargetDirectory, resource)
+    if not <| File.Exists outputFile then
+      try
+        use writer = File.CreateText outputFile
+        use stream = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream(resource)
+        if stream = null then
+          failwith <| sprintf "Could not find embedded resource '%s'" resource
+        use reader = new StreamReader(stream)
+        writer.Write(reader.ReadToEnd())
+      with _ ->
+        try File.Delete outputFile
+        with _ -> ()
+    else ()
+
 // Setup the Razor templating engine so that we can quickly pass the data in
 // and generate HTML.
 //
@@ -227,14 +236,18 @@ let private getLanguage source =
 // with a type that extends the `TemplateBase` class. This new assembly is
 // loaded so that we can create an instance and pass data into it
 // and generate the HTML.
-let private getTemplateType executingDirectory =
+let private getTemplateType templateName =
   let host = RazorEngineHost(CSharpRazorCodeLanguage())
   host.DefaultBaseClass <- typeof<TemplateBase>.FullName
   host.DefaultNamespace <- "RazorOutput"
   host.DefaultClassName <- "Template"
   host.NamespaceImports.Add("System") |> ignore
 
-  use reader = new StreamReader(Path.Combine(executingDirectory, "Resources", "Focco.cshtml"))
+  let templateStream = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream(templateName)
+  if templateStream = null then
+    failwith <| sprintf "Could not find embedded resource '%s'" templateName
+
+  use reader = new StreamReader(templateStream)
   let razorResult = RazorTemplateEngine(host).GenerateCode(reader)
 
   let compilerParams =
@@ -243,8 +256,7 @@ let private getTemplateType executingDirectory =
       GenerateExecutable = false,
       IncludeDebugInformation = false,
       CompilerOptions = "/target:library /optimize")
-  compilerParams.ReferencedAssemblies.
-    Add(typeof<TemplateBase>.Assembly.CodeBase.Replace("file:///","").Replace("/","\\")) |> ignore
+  compilerParams.ReferencedAssemblies.Add(typeof<TemplateBase>.Assembly.CodeBase.Replace("file:///","").Replace("/","\\")) |> ignore
 
   let codeProvider = new Microsoft.CSharp.CSharpCodeProvider()
   let results = codeProvider.CompileAssemblyFromDom(compilerParams, razorResult.GeneratedCode)
@@ -259,13 +271,8 @@ let private getTemplateType executingDirectory =
 
 // Given a string of source code, parse out each comment and the code that
 // follows it, and create an individual `Section` for it.
-let private parse source = async {
+let private parse source =
   let language = getLanguage(source)
-
-  // Open the file and generate the sequence of lines asynchronously.
-  use file = new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.Read ||| FileShare.Inheritable, 1024, true)
-  use reader = new AsyncStreamReader(file)
-  let lines = reader.ReadLines()
 
   // Save is a helper function to make the code below easier to read.
   let save docsText codeText sections =
@@ -275,8 +282,9 @@ let private parse source = async {
 
   // Asynchronously fold over the lines and retrieve the final state,
   // consisting of the identified sections and any remaining docs or code text.
-  let! sections, _, _, docsText, codeText =
-    lines |> AsyncSeq.fold (fun current line ->
+  let sections, _, _, docsText, codeText =
+    File.ReadLines source
+    |> Seq.fold (fun current line ->
       // Unpack the current state values.
       let sections, hasCode, isMultiline, (docsText:StringBuilder), codeText = current 
       // Capture the final multiline comment symbol, and turn off multiline comments.
@@ -310,7 +318,7 @@ let private parse source = async {
       ([], false, false, StringBuilder(), StringBuilder())
 
   // Add the remaining items to the sections list, then reverse it back into the correct order.
-  return sections |> save docsText codeText |> List.rev }
+  sections |> save docsText codeText |> List.rev
 
 // Prepares a single chunk of code for HTML output and runs the text of its
 // corresponding comment through **Markdown**, using a C# implementation
@@ -340,32 +348,32 @@ let private getDestination filepath =
 // Once all of the code is finished highlighting, we can generate the HTML file
 // and write out the documentation. Pass the completed sections into the template
 // found in `Resources/Focco.cshtml`
-let private generateHtml (settings:Settings) files source sections = async {
+let private generateHtml (settings:Settings) (templateType:Type) files source sections =
   let destination, depth = getDestination source
   let pathToRoot = List.fold (fun pathToRoot _ -> Path.Combine("..", pathToRoot)) "" [0..(depth-1)]
   
-  let htmlTemplate = Activator.CreateInstance(settings.TemplateType) :?> TemplateBase
+  let htmlTemplate = Activator.CreateInstance(templateType) :?> TemplateBase
 
   htmlTemplate.Title <- Path.GetFileName(source)
-  htmlTemplate.Stylesheets <- Array.map (fun x -> Path.Combine(pathToRoot, x).Replace('\\', '/')) settings.Stylesheets
-  htmlTemplate.Scripts <- Array.map (fun x -> Path.Combine(pathToRoot, x).Replace('\\', '/')) settings.Scripts
+  htmlTemplate.Stylesheets <- settings.Stylesheets
+  htmlTemplate.Scripts <- settings.Scripts
   htmlTemplate.Sections <- sections |> Array.ofSeq
   htmlTemplate.Sources <- files |> Array.ofSeq
+  htmlTemplate.GetResourcePath <- Func<_,_>(fun s -> Path.Combine(pathToRoot, s).Replace('\\', '/'))
   htmlTemplate.GetSourcePath <- Func<_,_>(fun s ->
     Path.Combine(pathToRoot, Path.ChangeExtension(s.ToLower(), ".html").Substring(2)).Replace('\\', '/'))
 
-  // Switch to the thread pool to generate and write the results to the destination file.
-  do! Async.SwitchToThreadPool()
   htmlTemplate.Execute()
-  File.WriteAllText(destination, htmlTemplate.Buffer.ToString()) }
+  File.WriteAllText(destination, htmlTemplate.Buffer.ToString())
 
 // Generate the documentation for a source file by reading it in, splitting it
 // up into comment/code sections, highlighting them for the appropriate language,
 // and merging them into an HTML template.
-let private generateDocumentation settings files source = async {
-  let! sections = parse source
-  do! highlight sections
-      |> generateHtml settings files source
+let private generateDocumentation settings templateType files source = async {
+  do! Async.SwitchToThreadPool()
+  parse source
+  |> highlight
+  |> generateHtml settings templateType files source
   return source }
 
 // Find all the files that match the pattern(s) passed in as arguments and
@@ -373,26 +381,21 @@ let private generateDocumentation settings files source = async {
 let generate (settings:Settings) (targets:string[]) =
   // Create the target directory and copy in the stylesheet and javascript files. 
   Directory.CreateDirectory(settings.TargetDirectory) |> ignore
-  for stylesheet in settings.Stylesheets do
-    File.Copy(sourceFileName = Path.Combine(settings.ResourcesPath, stylesheet),
-              destFileName = Path.Combine(settings.TargetDirectory, stylesheet),
-              overwrite = true)
-  for script in settings.Scripts do
-    File.Copy(sourceFileName = Path.Combine(settings.ResourcesPath, script), 
-              destFileName = Path.Combine(settings.TargetDirectory, script), 
-              overwrite = true)
+  copyResources settings
 
   // Collect all the files in the targets.
   let files =
-    [ for target in targets do
-        yield! Directory.GetFiles(".", target, SearchOption.AllDirectories)
-               |> Seq.filter (fun filename ->
-                  not (getLanguage(Path.GetFileName(filename)) = Unchecked.defaultof<Language>)) ]
+    seq { for target in targets do
+            yield! Directory.GetFiles(".", target, SearchOption.AllDirectories)
+                   |> Seq.filter (fun filename ->
+                      not (getLanguage(Path.GetFileName(filename)) = Unchecked.defaultof<Language>)) }
+
+  let templateType = getTemplateType settings.TemplateName
 
   // For each file found, create an asynchronous task to generate the output file,
   // then run them all in parallel.
   files
-  |> List.map (generateDocumentation settings files)
+  |> Seq.map (generateDocumentation settings templateType files)
   |> Async.Parallel
   |> Async.RunSynchronously
   |> printfn "Successfully processed the following files: %A"
@@ -400,19 +403,15 @@ let generate (settings:Settings) (targets:string[]) =
 // The program entry point.
 [<EntryPoint>]
 let main args =
+  #if DEBUG
+  let args = [| "Focco.fs" |]
+  #endif
   if args.Length > 0 then
-    // Put all of the configurable settings here. Eventually, these could move to parameter arguments.
-    // Note that this is a work in progress.
-    let executingDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)
-    let resourcesPath = Path.Combine(executingDirectory, "Resources")
-    let template = File.ReadAllText(Path.Combine(resourcesPath, "Focco.cshtml"))
     let settings = {
-        ExecutingDirectory = executingDirectory
-        ResourcesPath = resourcesPath
+        Scripts = [| "prettify.js" |]
+        Stylesheets = [| "Focco.css" |]
         TargetDirectory = "docs"
-        TemplateType = getTemplateType executingDirectory
-        Stylesheets = [| "focco.css" |]
-        Scripts = [| "prettify.js" |] }
+        TemplateName = "Focco.cshtml" }
     generate settings args
   else printfn "Run focco with a filename or path with file extension, e.g. `focco.exe src\\*.fs`."
   0

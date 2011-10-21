@@ -6,7 +6,7 @@ open System.IO
 // properties
 let currentDate = System.DateTime.UtcNow
 let projectName = "Focco"
-let version = "0.1." + currentDate.ToString("yMMdd")
+let version = "0.3." + currentDate.ToString("yMMdd")
 let projectSummary = "Focco is a quick-and-dirty, literate-programming-style documentation generator."
 let projectDescription = "Focco is a quick-and-dirty, literate-programming-style documentation generator."
 let authors = ["Ryan Riley"]
