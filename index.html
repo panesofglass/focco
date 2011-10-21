@@ -1,43 +1,44 @@
 <!DOCTYPE html />
+
 <html>
 <head>
-	<title>Focco.fs</title>
-	<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
-	<link href="focco.css" rel="stylesheet" media="all" type="text/css" />
-	<script src="prettify.js" type="text/javascript"></script>
+    <title>Focco.fs</title>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <link href="focco.css" rel="stylesheet" media="all" type="text/css" />
+    <script src="prettify.js" type="text/javascript"></script>
 </head>
 <body onload="prettyPrint()">
-	<div id="container">
-		<div id="background"></div>
-			<div id="jump_to">
-				Jump To &hellip;
-				<div id="jump_wrapper">
-					<div id="jump_page">
-							<a class="source" href="assemblyinfo.html">
-								AssemblyInfo.fs
-							</a>
-							<a class="source" href="index.html">
-								Focco.fs
-							</a>
-					</div>
-				</div>
-			</div>
-		<table cellpadding="0" cellspacing="0">
-			<thead>
-				<tr>
-					<th class="docs">
-						<h1>Focco.fs</h1>
-					</th>
-					<th class="code"></th>
-				</tr>
-			</thead>
-			<tbody>
-					<tr id="section_1">
-						<td class="docs">
-							<div class="pilwrap">
-								<a class="pilcrow" href="#section_1">&#182;</a>
-							</div>
-							<p><strong>Focco</strong> is a quick-and-dirty, literate-programming-style documentation
+    <div id="container">
+        <div id="background"></div>
+            <div id="jump_to">
+                Jump To &hellip;
+                <div id="jump_wrapper">
+                    <div id="jump_page">
+                        <a class="source" href="assemblyinfo.html">
+                            AssemblyInfo.fs
+                        </a>
+                        <a class="source" href="index.html">
+                            Focco.fs
+                        </a>
+                    </div>
+                </div>
+            </div>
+        <table cellpadding="0" cellspacing="0">
+            <thead>
+                <tr>
+                    <th class="docs">
+                        <h1>Focco.fs</h1>
+                    </th>
+                    <th class="code"></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr id="section_1">
+                    <td class="docs">
+                        <div class="pilwrap">
+                            <a class="pilcrow" href="#section_1">&#182;</a>
+                        </div>
+                        <p><strong>Focco</strong> is a quick-and-dirty, literate-programming-style documentation
 generator. It is a F# port of <a href="http://dontangg.github.com/nocco/">Nocco</a>
 by <a href="https://github.com/dontangg/">Don Wilson</a>,
 which in turn is a port of <a href="http://jashkenas.github.com/docco/">Docco</a> for .NET,
@@ -75,203 +76,312 @@ Both are by <a href="http://github.com/rtomayko">Ryan Tomayko</a>. If Python's m
 your speed, take a look at <a href="http://github.com/fitzgen">Nick Fitzgerald</a>'s
 <a href="http://fitzgen.github.com/pycco/">Pycco</a>.</p>
 
-						</td>
-						<td class="code">
-							<pre><code class='prettyprint'>module Focco =
+                    </td>
+                    <td class="code">
+                        <pre><code class='prettyprint'>
+</code></pre>
+                    </td>
+                </tr>
+                <tr id="section_2">
+                    <td class="docs">
+                        <div class="pilwrap">
+                            <a class="pilcrow" href="#section_2">&#182;</a>
+                        </div>
+                        <p>Import namespaces to allow us to type shorter type names.</p>
+
+                    </td>
+                    <td class="code">
+                        <pre><code class='prettyprint'>open System
+open System.CodeDom.Compiler
+open System.IO
+open System.Linq
+open System.Text
+open System.Text.RegularExpressions
+open System.Web.Razor
+open Microsoft.FSharp.Control
+open FSharp.Control
 
 </code></pre>
-						</td>
-					</tr>
-					<tr id="section_2">
-						<td class="docs">
-							<div class="pilwrap">
-								<a class="pilcrow" href="#section_2">&#182;</a>
-							</div>
-							<p>Import namespaces to allow us to type shorter type names.</p>
-
-						</td>
-						<td class="code">
-							<pre><code class='prettyprint'>  open System
-  open System.CodeDom.Compiler
-  open System.IO
-  open System.Linq
-  open System.Text
-  open System.Web.Razor
-
-</code></pre>
-						</td>
-					</tr>
-					<tr id="section_3">
-						<td class="docs">
-							<div class="pilwrap">
-								<a class="pilcrow" href="#section_3">&#182;</a>
-							</div>
-							<h3>Helpers &amp; Setup</h3>
-
-						</td>
-						<td class="code">
-							<pre><code class='prettyprint'>
-</code></pre>
-						</td>
-					</tr>
-					<tr id="section_4">
-						<td class="docs">
-							<div class="pilwrap">
-								<a class="pilcrow" href="#section_4">&#182;</a>
-							</div>
-							<p>In F#, literate means bottom up. You have to define what you want to use
-before you use it. Therefore, we start with the helpers and setup
-then get into the more meaty generation.</p>
-
-						</td>
-						<td class="code">
-							<pre><code class='prettyprint'>
-</code></pre>
-						</td>
-					</tr>
-					<tr id="section_5">
-						<td class="docs">
-							<div class="pilwrap">
-								<a class="pilcrow" href="#section_5">&#182;</a>
-							</div>
-							<p>The language type stores each supported language,
+                    </td>
+                </tr>
+                <tr id="section_3">
+                    <td class="docs">
+                        <div class="pilwrap">
+                            <a class="pilcrow" href="#section_3">&#182;</a>
+                        </div>
+                        <p>The language type stores each supported language,
 as well as regex matchers to determine whether or not
 a given file matches a supported language.</p>
 
-						</td>
-						<td class="code">
-							<pre><code class='prettyprint'>  type Language = {
-    Name : string
-    Singleline : string
-    MultilineStart : string option
-    MultilineEnd : string option
-    XmlDoc : string option } with
-    member x.CommentMatcher =
-      RegularExpressions.Regex(@&quot;^\s*&quot; + x.Singleline + @&quot;\s?&quot;)
-    member x.CommentFilter =
-      let baseRegex = @&quot;^#![/]|^\s*#\{&quot;
-      let matchRegex =
-        match x.XmlDoc with
-        | Some v -&gt; baseRegex + @&quot;|^\s*&quot; + v
-        | _ -&gt; baseRegex
-      RegularExpressions.Regex(sprintf &quot;(%s)&quot; matchRegex)
-    member x.IsMatch(line) =
-      x.CommentMatcher.IsMatch(line) &amp;&amp; not (x.CommentFilter.IsMatch(line))
-  
-</code></pre>
-						</td>
-					</tr>
-					<tr id="section_6">
-						<td class="docs">
-							<div class="pilwrap">
-								<a class="pilcrow" href="#section_6">&#182;</a>
-							</div>
-							<p>The section stores the various sections of a file's generated markup.</p>
+                    </td>
+                    <td class="code">
+                        <pre><code class='prettyprint'>type Language = {
+  Name            : string
+  Singleline      : string
+  MultilineStart  : string option
+  MultilineEnd    : string option
+  XmlDoc          : string option }
+  with
+  member x.SinglelineMatcher =
+    Regex(@&quot;^\s*&quot; + Regex.Escape x.Singleline + @&quot;\s?&quot;)
 
-						</td>
-						<td class="code">
-							<pre><code class='prettyprint'>  type Section = {
-    CodeHtml : string
-    DocsHtml : string }
-  
-</code></pre>
-						</td>
-					</tr>
-					<tr id="section_7">
-						<td class="docs">
-							<div class="pilwrap">
-								<a class="pilcrow" href="#section_7">&#182;</a>
-							</div>
-							<p>The template base class for the rendering via Razor.</p>
+  member x.MultilineStartMatcher =
+    Option.map (fun v -&gt; Regex(@&quot;^\s*&quot; + Regex.Escape v + @&quot;\s?&quot;)) x.MultilineStart
 
-						</td>
-						<td class="code">
-							<pre><code class='prettyprint'>  [&lt;AbstractClass&gt;]
-  type TemplateBase() =
-    let mutable buffer = new StringBuilder()
-    let mutable title : string = null
-    let mutable pathToCss : string = null
-    let mutable getSourcePath : Func&lt;string,string&gt; = null
-    let mutable sections : Section[] = null
-    let mutable sources : string[] = null
-    member x.Buffer
-      with get() = buffer
-      and  set(value) = buffer &lt;- value
-    member x.Title
-      with get() = title
-      and  set(value) = title &lt;- value
-    member x.PathToCss
-      with get() = pathToCss
-      and  set(value) = pathToCss &lt;- value
-    member x.GetSourcePath
-      with get() = getSourcePath
-      and  set(value) = getSourcePath &lt;- value
-    member x.Sections
-      with get() = sections
-      and  set(value) = sections &lt;- value
-    member x.Sources
-      with get() = sources
-      and  set(value) = sources &lt;- value
-    abstract Execute : unit -&gt; unit
-    abstract WriteLiteral : obj -&gt; unit
-    default x.WriteLiteral(value) = x.Buffer.Append(value) |&gt; ignore
-    abstract Write : obj -&gt; unit
-    default x.Write(value) = x.WriteLiteral(value)
-  
+  member x.MultilineEndMatcher =
+    Option.map (fun v -&gt; Regex(@&quot;(?!&quot;&quot;)&quot; + Regex.Escape v + @&quot;(?!&quot;&quot;)&quot;)) x.MultilineEnd
+
+  member x.CommentFilter =
+    let baseRegex = @&quot;^#![/]|^\s*#\{&quot;
+    let matchRegex =
+      match x.XmlDoc with
+      | Some v -&gt; baseRegex + @&quot;|^\s*&quot; + v
+      | _ -&gt; baseRegex
+    Regex(sprintf &quot;(%s)&quot; matchRegex)
+
+  member x.IsStartingMultilineComment(line) =
+    match x.MultilineStartMatcher with
+    | Some m -&gt; m.IsMatch(line) &amp;&amp; not (x.CommentFilter.IsMatch(line))
+    | _ -&gt; false
+    
+  member x.IsEndingMultilineComment(line) =
+    match x.MultilineEndMatcher with
+    | Some m -&gt; m.IsMatch(line) &amp;&amp; not (x.CommentFilter.IsMatch(line))
+    | _ -&gt; false
+
+  member x.IsSinglelineComment(line) =
+    not (x.CommentFilter.IsMatch(line)) &amp;&amp;
+    (x.SinglelineMatcher.IsMatch(line) || 
+     (x.IsStartingMultilineComment(line) &amp;&amp;
+      x.IsEndingMultilineComment(line)))
+
+  member x.StripMultilineStartComment(line) =
+    match x.MultilineStartMatcher with
+    | Some m -&gt; m.Replace(line, &quot;&quot;)
+    | _ -&gt; line
+
+  member x.StripMultilineEndComment(line) =
+    match x.MultilineEndMatcher with
+    | Some m -&gt; m.Replace(line, &quot;&quot;)
+    | _ -&gt; line
+
+  member x.StripSinglelineComment(line) =
+    x.SinglelineMatcher.Replace(line, &quot;&quot;)
+    |&gt; x.StripMultilineStartComment
+    |&gt; x.StripMultilineEndComment
+
 </code></pre>
-						</td>
-					</tr>
-					<tr id="section_8">
-						<td class="docs">
-							<div class="pilwrap">
-								<a class="pilcrow" href="#section_8">&#182;</a>
-							</div>
-							<p>A list of the languages that Focco supports, mapping the file extension to
+                    </td>
+                </tr>
+                <tr id="section_4">
+                    <td class="docs">
+                        <div class="pilwrap">
+                            <a class="pilcrow" href="#section_4">&#182;</a>
+                        </div>
+                        <p>The section stores the various sections of a file's generated markup.</p>
+
+                    </td>
+                    <td class="code">
+                        <pre><code class='prettyprint'>type Section = {
+  CodeHtml : string
+  DocsHtml : string }
+
+</code></pre>
+                    </td>
+                </tr>
+                <tr id="section_5">
+                    <td class="docs">
+                        <div class="pilwrap">
+                            <a class="pilcrow" href="#section_5">&#182;</a>
+                        </div>
+                        <p>Stores the settings for rendering documentation.</p>
+
+                    </td>
+                    <td class="code">
+                        <pre><code class='prettyprint'>type Settings = {
+  Scripts : string[]
+  Stylesheets : string[]
+  TargetDirectory : string
+  TemplateName : string }
+
+</code></pre>
+                    </td>
+                </tr>
+                <tr id="section_6">
+                    <td class="docs">
+                        <div class="pilwrap">
+                            <a class="pilcrow" href="#section_6">&#182;</a>
+                        </div>
+                        <p>The template base class for the rendering via Razor.</p>
+
+                    </td>
+                    <td class="code">
+                        <pre><code class='prettyprint'>[&lt;AbstractClass&gt;]
+type TemplateBase() =
+  let mutable buffer = new StringBuilder()
+  let mutable title : string = null
+  let mutable pathToResources : string = null
+  let mutable stylesheets : string[] = null
+  let mutable scripts : string[] = null
+  let mutable getResourcePath : Func&lt;string, string&gt; = null
+  let mutable getSourcePath : Func&lt;string,string&gt; = null
+  let mutable sections : Section[] = null
+  let mutable sources : string[] = null
+  member x.Buffer
+    with get() = buffer
+    and  set(value) = buffer &lt;- value
+  member x.Title
+    with get() = title
+    and  set(value) = title &lt;- value
+  member x.Stylesheets
+    with get() = stylesheets
+    and  set(value) = stylesheets &lt;- value
+  member x.Scripts
+    with get() = scripts
+    and  set(value) = scripts &lt;- value
+  member x.GetResourcePath
+    with get() = getResourcePath
+    and  set(value) = getResourcePath &lt;- value
+  member x.GetSourcePath
+    with get() = getSourcePath
+    and  set(value) = getSourcePath &lt;- value
+  member x.Sections
+    with get() = sections
+    and  set(value) = sections &lt;- value
+  member x.Sources
+    with get() = sources
+    and  set(value) = sources &lt;- value
+  abstract Execute : unit -&gt; unit
+  abstract WriteLiteral : obj -&gt; unit
+  default x.WriteLiteral(value) = x.Buffer.Append(value) |&gt; ignore
+  abstract Write : obj -&gt; unit
+  default x.Write(value) = x.WriteLiteral(value)
+
+</code></pre>
+                    </td>
+                </tr>
+                <tr id="section_7">
+                    <td class="docs">
+                        <div class="pilwrap">
+                            <a class="pilcrow" href="#section_7">&#182;</a>
+                        </div>
+                        <h3>Helpers &amp; Setup</h3>
+
+                    </td>
+                    <td class="code">
+                        <pre><code class='prettyprint'>
+</code></pre>
+                    </td>
+                </tr>
+                <tr id="section_8">
+                    <td class="docs">
+                        <div class="pilwrap">
+                            <a class="pilcrow" href="#section_8">&#182;</a>
+                        </div>
+                        <p>In F#, literate means bottom up. You have to define what you want to use
+before you use it. Therefore, we start with the helpers and setup
+then get into the more meaty generation.</p>
+
+                    </td>
+                    <td class="code">
+                        <pre><code class='prettyprint'>
+</code></pre>
+                    </td>
+                </tr>
+                <tr id="section_9">
+                    <td class="docs">
+                        <div class="pilwrap">
+                            <a class="pilcrow" href="#section_9">&#182;</a>
+                        </div>
+                        <p>A list of the languages that Focco supports, mapping the file extension to
 the symbol that indicates a comment. To add another language to Focco's
-repertoire, add it here. (Support for multiline comments is coming.)</p>
+repertoire, add it here.</p>
 
-						</td>
-						<td class="code">
-							<pre><code class='prettyprint'>  let private languages =
-    [| (&quot;.js&quot;,  { Name = &quot;javascript&quot;
-                  Singleline = &quot;//&quot;
-                  MultilineStart = Some &quot;/*&quot;
-                  MultilineEnd = Some &quot;*/&quot;
-                  XmlDoc = None })
-       (&quot;.fs&quot;,  { Name = &quot;fsharp&quot;
-                  Singleline = &quot;//&quot;
-                  MultilineStart = Some &quot;(*&quot;
-                  MultilineEnd = Some &quot;*)&quot;
-                  XmlDoc = Some &quot;///&quot; })
-       (&quot;.cs&quot;,  { Name = &quot;csharp&quot;
-                  Singleline = &quot;//&quot;
-                  MultilineStart = Some &quot;/*&quot;
-                  MultilineEnd = Some &quot;*/&quot;
-                  XmlDoc = Some &quot;///&quot; })
-       (&quot;.vb&quot;,  { Name = &quot;vb.net&quot;
-                  Singleline = &quot;&#39;&quot;
-                  MultilineStart = None
-                  MultilineEnd = None
-                  XmlDoc = Some &quot;&#39;&#39;&#39;&quot; })
-       (&quot;.sql&quot;, { Name = &quot;sql&quot;
-                  Singleline = &quot;--&quot;
-                  MultilineStart = None
-                  MultilineEnd = None
-                  XmlDoc = None }) |]
-    |&gt; dict
-  
-  let private executingDirectory =
-    Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)
+                    </td>
+                    <td class="code">
+                        <pre><code class='prettyprint'>let private languages =
+  dict [| (&quot;.js&quot;,  { Name = &quot;javascript&quot;
+                     Singleline = &quot;//&quot;
+                     MultilineStart = Some &quot;/*&quot;
+                     MultilineEnd = Some &quot;*/&quot;
+                     XmlDoc = None })
+          (&quot;.fs&quot;,  { Name = &quot;fsharp&quot;
+                     Singleline = &quot;//&quot;
+                     MultilineStart = Some &quot;(*&quot;
+                     MultilineEnd = Some &quot;*)&quot;
+                     XmlDoc = Some &quot;///&quot; })
+          (&quot;.cs&quot;,  { Name = &quot;csharp&quot;
+                     Singleline = &quot;//&quot;
+                     MultilineStart = Some &quot;/*&quot;
+                     MultilineEnd = Some &quot;*/&quot;
+                     XmlDoc = Some &quot;///&quot; })
+          (&quot;.vb&quot;,  { Name = &quot;vb.net&quot;
+                     Singleline = &quot;&#39;&quot;
+                     MultilineStart = None
+                     MultilineEnd = None
+                     XmlDoc = Some &quot;&#39;&#39;&#39;&quot; })
+          (&quot;.sql&quot;, { Name = &quot;sql&quot;
+                     Singleline = &quot;--&quot;
+                     MultilineStart = None
+                     MultilineEnd = None
+                     XmlDoc = None }) |]
 
 </code></pre>
-						</td>
-					</tr>
-					<tr id="section_9">
-						<td class="docs">
-							<div class="pilwrap">
-								<a class="pilcrow" href="#section_9">&#182;</a>
-							</div>
-							<p>Setup the Razor templating engine so that we can quickly pass the data in
+                    </td>
+                </tr>
+                <tr id="section_10">
+                    <td class="docs">
+                        <div class="pilwrap">
+                            <a class="pilcrow" href="#section_10">&#182;</a>
+                        </div>
+                        <p>Get the current language we're documenting, based on the extension.</p>
+
+                    </td>
+                    <td class="code">
+                        <pre><code class='prettyprint'>let private getLanguage source =
+  let extension = Path.GetExtension source
+  if languages.ContainsKey(extension)
+    then languages.[extension]
+    else Unchecked.defaultof&lt;Language&gt;
+
+</code></pre>
+                    </td>
+                </tr>
+                <tr id="section_11">
+                    <td class="docs">
+                        <div class="pilwrap">
+                            <a class="pilcrow" href="#section_11">&#182;</a>
+                        </div>
+                        <p>Helper function to copy resource files into the target directory from embedded resources.</p>
+
+                    </td>
+                    <td class="code">
+                        <pre><code class='prettyprint'>let private copyResources (settings : Settings) =
+  Directory.CreateDirectory settings.TargetDirectory |&gt; ignore
+  for resource in seq { yield! settings.Scripts; yield! settings.Stylesheets } do
+    let outputFile = Path.Combine(settings.TargetDirectory, resource)
+    if not &lt;| File.Exists outputFile then
+      try
+        use writer = File.CreateText outputFile
+        use stream = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream(resource)
+        if stream = null then
+          failwith &lt;| sprintf &quot;Could not find embedded resource &#39;%s&#39;&quot; resource
+        use reader = new StreamReader(stream)
+        writer.Write(reader.ReadToEnd())
+      with _ -&gt;
+        try File.Delete outputFile
+        with _ -&gt; ()
+    else ()
+
+</code></pre>
+                    </td>
+                </tr>
+                <tr id="section_12">
+                    <td class="docs">
+                        <div class="pilwrap">
+                            <a class="pilcrow" href="#section_12">&#182;</a>
+                        </div>
+                        <p>Setup the Razor templating engine so that we can quickly pass the data in
 and generate HTML.</p>
 
 <p>The file <code>Resources\Focco.cshtml</code> is read and compiled into a new dll
@@ -279,267 +389,434 @@ with a type that extends the <code>TemplateBase</code> class. This new assembly 
 loaded so that we can create an instance and pass data into it
 and generate the HTML.</p>
 
-						</td>
-						<td class="code">
-							<pre><code class='prettyprint'>  let private getTemplateType() =
-    let host = RazorEngineHost(CSharpRazorCodeLanguage())
-    host.DefaultBaseClass &lt;- typeof&lt;TemplateBase&gt;.FullName
-    host.DefaultNamespace &lt;- &quot;RazorOutput&quot;
-    host.DefaultClassName &lt;- &quot;Template&quot;
-    host.NamespaceImports.Add(&quot;System&quot;) |&gt; ignore
-  
-    use reader = new StreamReader(Path.Combine(executingDirectory, &quot;Resources&quot;, &quot;Focco.cshtml&quot;))
-    let razorResult = RazorTemplateEngine(host).GenerateCode(reader)
-  
-    let compilerParams =
-      CompilerParameters(
-        GenerateInMemory = true,
-        GenerateExecutable = false,
-        IncludeDebugInformation = false,
-        CompilerOptions = &quot;/target:library /optimize&quot;)
-    compilerParams.ReferencedAssemblies.
-      Add(typeof&lt;TemplateBase&gt;.Assembly.CodeBase.Replace(&quot;file:///&quot;,&quot;&quot;).Replace(&quot;/&quot;,&quot;\\&quot;)) |&gt; ignore
-  
-    let codeProvider = new Microsoft.CSharp.CSharpCodeProvider()
-    let results = codeProvider.CompileAssemblyFromDom(compilerParams, razorResult.GeneratedCode)
-  
-</code></pre>
-						</td>
-					</tr>
-					<tr id="section_10">
-						<td class="docs">
-							<div class="pilwrap">
-								<a class="pilcrow" href="#section_10">&#182;</a>
-							</div>
-							<p>Check for errors that may have occurred during template generation.</p>
+                    </td>
+                    <td class="code">
+                        <pre><code class='prettyprint'>let private getTemplateType templateName =
+  let host = RazorEngineHost(CSharpRazorCodeLanguage())
+  host.DefaultBaseClass &lt;- typeof&lt;TemplateBase&gt;.FullName
+  host.DefaultNamespace &lt;- &quot;RazorOutput&quot;
+  host.DefaultClassName &lt;- &quot;Template&quot;
+  host.NamespaceImports.Add(&quot;System&quot;) |&gt; ignore
 
-						</td>
-						<td class="code">
-							<pre><code class='prettyprint'>    if results.Errors.HasErrors then
-      results.Errors.OfType&lt;CompilerError&gt;()
-      |&gt; Seq.filter (fun x -&gt; not x.IsWarning)
-      |&gt; Seq.iter (fun x -&gt; printfn &quot;Error compiling template: (%d, %d) %s&quot; x.Line x.Column x.ErrorText)
-  
-    results.CompiledAssembly.GetType(&quot;RazorOutput.Template&quot;)
-  
-</code></pre>
-						</td>
-					</tr>
-					<tr id="section_11">
-						<td class="docs">
-							<div class="pilwrap">
-								<a class="pilcrow" href="#section_11">&#182;</a>
-							</div>
-							<p>Get the current language we're documenting, based on the extension.</p>
+  let templateStream = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream(templateName)
+  if templateStream = null then
+    failwith &lt;| sprintf &quot;Could not find embedded resource &#39;%s&#39;&quot; templateName
 
-						</td>
-						<td class="code">
-							<pre><code class='prettyprint'>  let private getLanguage source =
-    let extension = Path.GetExtension source
-    if languages.ContainsKey(extension)
-      then languages.[extension]
-      else Unchecked.defaultof&lt;Language&gt;
-  
+  use reader = new StreamReader(templateStream)
+  let razorResult = RazorTemplateEngine(host).GenerateCode(reader)
+
+  let compilerParams =
+    CompilerParameters(
+      GenerateInMemory = true,
+      GenerateExecutable = false,
+      IncludeDebugInformation = false,
+      CompilerOptions = &quot;/target:library /optimize&quot;)
+  compilerParams.ReferencedAssemblies.Add(typeof&lt;TemplateBase&gt;.Assembly.CodeBase.Replace(&quot;file:///&quot;,&quot;&quot;).Replace(&quot;/&quot;,&quot;\\&quot;)) |&gt; ignore
+
+  let codeProvider = new Microsoft.CSharp.CSharpCodeProvider()
+  let results = codeProvider.CompileAssemblyFromDom(compilerParams, razorResult.GeneratedCode)
+
 </code></pre>
-						</td>
-					</tr>
-					<tr id="section_12">
-						<td class="docs">
-							<div class="pilwrap">
-								<a class="pilcrow" href="#section_12">&#182;</a>
-							</div>
-							<p>Given a string of source code, parse out each comment and the code that
+                    </td>
+                </tr>
+                <tr id="section_13">
+                    <td class="docs">
+                        <div class="pilwrap">
+                            <a class="pilcrow" href="#section_13">&#182;</a>
+                        </div>
+                        <p>Check for errors that may have occurred during template generation.</p>
+
+                    </td>
+                    <td class="code">
+                        <pre><code class='prettyprint'>  if results.Errors.HasErrors then
+    results.Errors.OfType&lt;CompilerError&gt;()
+    |&gt; Seq.filter (fun x -&gt; not x.IsWarning)
+    |&gt; Seq.iter (fun x -&gt; printfn &quot;Error compiling template: (%d, %d) %s&quot; x.Line x.Column x.ErrorText)
+
+  results.CompiledAssembly.GetType(&quot;RazorOutput.Template&quot;)
+
+</code></pre>
+                    </td>
+                </tr>
+                <tr id="section_14">
+                    <td class="docs">
+                        <div class="pilwrap">
+                            <a class="pilcrow" href="#section_14">&#182;</a>
+                        </div>
+                        <p>Given a string of source code, parse out each comment and the code that
 follows it, and create an individual <code>Section</code> for it.</p>
 
-						</td>
-						<td class="code">
-							<pre><code class='prettyprint'>  let private parse source lines =
-    let language = getLanguage(source)
-    let save docsText codeText sections =
-      { DocsHtml = docsText.ToString()
-        CodeHtml = codeText.ToString() }
-      :: sections
-    let sections, _, docsText, codeText =
-      lines |&gt; Seq.fold (fun state line -&gt;
-        let sections, hasCode, docsText, codeText = state
-        if language.IsMatch(line) then
-          if hasCode then
-            let sections&#39; = sections |&gt; save docsText codeText
-            let docsText&#39; =
-              let sb = StringBuilder()
-              in sb.AppendLine(language.CommentMatcher.Replace(line,&quot;&quot;))
-            (sections&#39;, false, docsText&#39;, new StringBuilder())
-          else
-            (sections, hasCode, docsText.AppendLine(language.CommentMatcher.Replace(line, &quot;&quot;)), codeText)
-        elif language.CommentFilter.IsMatch(line) then (sections, true, docsText, codeText)
-        else (sections, true, docsText, codeText.AppendLine(line)))
-        ([], false, StringBuilder(), StringBuilder())
-    sections |&gt; save docsText codeText |&gt; List.rev
-  
+                    </td>
+                    <td class="code">
+                        <pre><code class='prettyprint'>let private parse source =
+  let language = getLanguage(source)
+
 </code></pre>
-						</td>
-					</tr>
-					<tr id="section_13">
-						<td class="docs">
-							<div class="pilwrap">
-								<a class="pilcrow" href="#section_13">&#182;</a>
-							</div>
-							<p>Prepares a single chunk of code for HTML output and runs the text of its
+                    </td>
+                </tr>
+                <tr id="section_15">
+                    <td class="docs">
+                        <div class="pilwrap">
+                            <a class="pilcrow" href="#section_15">&#182;</a>
+                        </div>
+                        <p>Save is a helper function to make the code below easier to read.</p>
+
+                    </td>
+                    <td class="code">
+                        <pre><code class='prettyprint'>  let save docsText codeText sections =
+    { DocsHtml = docsText.ToString()
+      CodeHtml = codeText.ToString() }
+    :: sections
+
+</code></pre>
+                    </td>
+                </tr>
+                <tr id="section_16">
+                    <td class="docs">
+                        <div class="pilwrap">
+                            <a class="pilcrow" href="#section_16">&#182;</a>
+                        </div>
+                        <p>Asynchronously fold over the lines and retrieve the final state,
+consisting of the identified sections and any remaining docs or code text.</p>
+
+                    </td>
+                    <td class="code">
+                        <pre><code class='prettyprint'>  let sections, _, _, docsText, codeText =
+    File.ReadLines source
+    |&gt; Seq.fold (fun current line -&gt;
+</code></pre>
+                    </td>
+                </tr>
+                <tr id="section_17">
+                    <td class="docs">
+                        <div class="pilwrap">
+                            <a class="pilcrow" href="#section_17">&#182;</a>
+                        </div>
+                        <p>Unpack the current state values.</p>
+
+                    </td>
+                    <td class="code">
+                        <pre><code class='prettyprint'>      let sections, hasCode, isMultiline, (docsText:StringBuilder), codeText = current 
+</code></pre>
+                    </td>
+                </tr>
+                <tr id="section_18">
+                    <td class="docs">
+                        <div class="pilwrap">
+                            <a class="pilcrow" href="#section_18">&#182;</a>
+                        </div>
+                        <p>Capture the final multiline comment symbol, and turn off multiline comments.</p>
+
+                    </td>
+                    <td class="code">
+                        <pre><code class='prettyprint'>      if isMultiline &amp;&amp; language.IsEndingMultilineComment(line) then
+        (sections, hasCode, false, docsText.AppendLine(language.StripMultilineEndComment(line)), codeText)
+</code></pre>
+                    </td>
+                </tr>
+                <tr id="section_19">
+                    <td class="docs">
+                        <div class="pilwrap">
+                            <a class="pilcrow" href="#section_19">&#182;</a>
+                        </div>
+                        <p>Process the multiline comment and keep going.</p>
+
+                    </td>
+                    <td class="code">
+                        <pre><code class='prettyprint'>      elif isMultiline then
+        (sections, hasCode, isMultiline, docsText.AppendLine(line), codeText)
+</code></pre>
+                    </td>
+                </tr>
+                <tr id="section_20">
+                    <td class="docs">
+                        <div class="pilwrap">
+                            <a class="pilcrow" href="#section_20">&#182;</a>
+                        </div>
+                        <p>Single line comment. This should come before a beginning multiline comment,
+because a multiline comment may also complete on the same line.</p>
+
+                    </td>
+                    <td class="code">
+                        <pre><code class='prettyprint'>      elif language.IsSinglelineComment(line) then
+        if hasCode then
+          let sections&#39; = sections |&gt; save docsText codeText
+          let docsText&#39; = let sb = StringBuilder() in sb.AppendLine(language.StripSinglelineComment(line))
+          (sections&#39;, false, false, docsText&#39;, new StringBuilder())
+        else
+          (sections, hasCode, false, docsText.AppendLine(language.StripSinglelineComment(line)), codeText)
+</code></pre>
+                    </td>
+                </tr>
+                <tr id="section_21">
+                    <td class="docs">
+                        <div class="pilwrap">
+                            <a class="pilcrow" href="#section_21">&#182;</a>
+                        </div>
+                        <p>We're starting a multiline comment!</p>
+
+                    </td>
+                    <td class="code">
+                        <pre><code class='prettyprint'>      elif language.IsStartingMultilineComment(line) then
+        if hasCode then
+          let sections&#39; = sections |&gt; save docsText codeText
+          let docsText&#39; = let sb = StringBuilder() in sb.AppendLine(language.StripMultilineStartComment(line))
+          (sections&#39;, false, true, docsText&#39;, new StringBuilder())
+        else
+          (sections, hasCode, true, docsText.AppendLine(language.StripMultilineStartComment(line)), codeText)
+</code></pre>
+                    </td>
+                </tr>
+                <tr id="section_22">
+                    <td class="docs">
+                        <div class="pilwrap">
+                            <a class="pilcrow" href="#section_22">&#182;</a>
+                        </div>
+                        <p>Ignore xml doc comments.</p>
+
+                    </td>
+                    <td class="code">
+                        <pre><code class='prettyprint'>      elif language.CommentFilter.IsMatch(line) then
+        (sections, hasCode, isMultiline, docsText, codeText)
+</code></pre>
+                    </td>
+                </tr>
+                <tr id="section_23">
+                    <td class="docs">
+                        <div class="pilwrap">
+                            <a class="pilcrow" href="#section_23">&#182;</a>
+                        </div>
+                        <p>This line has code.</p>
+
+                    </td>
+                    <td class="code">
+                        <pre><code class='prettyprint'>      else (sections, true, false, docsText, codeText.AppendLine(line)) )
+      ([], false, false, StringBuilder(), StringBuilder())
+
+</code></pre>
+                    </td>
+                </tr>
+                <tr id="section_24">
+                    <td class="docs">
+                        <div class="pilwrap">
+                            <a class="pilcrow" href="#section_24">&#182;</a>
+                        </div>
+                        <p>Add the remaining items to the sections list, then reverse it back into the correct order.</p>
+
+                    </td>
+                    <td class="code">
+                        <pre><code class='prettyprint'>  sections |&gt; save docsText codeText |&gt; List.rev
+
+</code></pre>
+                    </td>
+                </tr>
+                <tr id="section_25">
+                    <td class="docs">
+                        <div class="pilwrap">
+                            <a class="pilcrow" href="#section_25">&#182;</a>
+                        </div>
+                        <p>Prepares a single chunk of code for HTML output and runs the text of its
 corresponding comment through <strong>Markdown</strong>, using a C# implementation
 called <a href="http://code.google.com/p/markdownsharp/">MarkdownSharp</a>.</p>
 
-						</td>
-						<td class="code">
-							<pre><code class='prettyprint'>  let private highlight source sections =
-    let markdown = MarkdownSharp.Markdown()
-    sections |&gt; Seq.map (fun section -&gt;
-      { section with
-          DocsHtml = markdown.Transform(section.DocsHtml)
-          CodeHtml = System.Web.HttpUtility.HtmlEncode(section.CodeHtml) })
-  
+                    </td>
+                    <td class="code">
+                        <pre><code class='prettyprint'>let private highlight sections =
+  let markdown = MarkdownSharp.Markdown()
+  sections |&gt; Seq.map (fun section -&gt;
+    { section with
+        DocsHtml = markdown.Transform(section.DocsHtml)
+        CodeHtml = System.Web.HttpUtility.HtmlEncode(section.CodeHtml) })
+
 </code></pre>
-						</td>
-					</tr>
-					<tr id="section_14">
-						<td class="docs">
-							<div class="pilwrap">
-								<a class="pilcrow" href="#section_14">&#182;</a>
-							</div>
-							<p>Compute the destination HTML path for an input source file path. If the source
+                    </td>
+                </tr>
+                <tr id="section_26">
+                    <td class="docs">
+                        <div class="pilwrap">
+                            <a class="pilcrow" href="#section_26">&#182;</a>
+                        </div>
+                        <p>Compute the destination HTML path for an input source file path. If the source
 is <code>Example.cs</code>, the HTML will be at <code>docs/example.html</code></p>
 
-						</td>
-						<td class="code">
-							<pre><code class='prettyprint'>  let private getDestination filepath =
-    let directories =
-      Path.GetDirectoryName(filepath)
-        .Substring(1)
-        .Split([| Path.DirectorySeparatorChar |], StringSplitOptions.RemoveEmptyEntries)
-    let depth = directories.Length
-    let destination =
-      Path.Combine(&quot;docs&quot;, String.Join(Path.DirectorySeparatorChar.ToString(), directories)).ToLower()
-    Directory.CreateDirectory(destination) |&gt; ignore
-    Path.Combine(&quot;docs&quot;, Path.ChangeExtension(filepath, &quot;html&quot;).ToLower()), depth
-  
-</code></pre>
-						</td>
-					</tr>
-					<tr id="section_15">
-						<td class="docs">
-							<div class="pilwrap">
-								<a class="pilcrow" href="#section_15">&#182;</a>
-							</div>
-							<h3>Main Documentation Generation Functions</h3>
+                    </td>
+                    <td class="code">
+                        <pre><code class='prettyprint'>let private getDestination filepath =
+  let directories =
+    Path.GetDirectoryName(filepath)
+      .Substring(1)
+      .Split([| Path.DirectorySeparatorChar |], StringSplitOptions.RemoveEmptyEntries)
+  let depth = directories.Length
+  let destination =
+    Path.Combine(&quot;docs&quot;, String.Join(Path.DirectorySeparatorChar.ToString(), directories)).ToLower()
+  Directory.CreateDirectory(destination) |&gt; ignore
+  Path.Combine(&quot;docs&quot;, Path.ChangeExtension(filepath, &quot;html&quot;).ToLower()), depth
 
-						</td>
-						<td class="code">
-							<pre><code class='prettyprint'>  
 </code></pre>
-						</td>
-					</tr>
-					<tr id="section_16">
-						<td class="docs">
-							<div class="pilwrap">
-								<a class="pilcrow" href="#section_16">&#182;</a>
-							</div>
-							<p>Once all of the code is finished highlighting, we can generate the HTML file
+                    </td>
+                </tr>
+                <tr id="section_27">
+                    <td class="docs">
+                        <div class="pilwrap">
+                            <a class="pilcrow" href="#section_27">&#182;</a>
+                        </div>
+                        <h3>Main Documentation Generation Functions</h3>
+
+                    </td>
+                    <td class="code">
+                        <pre><code class='prettyprint'>
+</code></pre>
+                    </td>
+                </tr>
+                <tr id="section_28">
+                    <td class="docs">
+                        <div class="pilwrap">
+                            <a class="pilcrow" href="#section_28">&#182;</a>
+                        </div>
+                        <p>Once all of the code is finished highlighting, we can generate the HTML file
 and write out the documentation. Pass the completed sections into the template
 found in <code>Resources/Focco.cshtml</code></p>
 
-						</td>
-						<td class="code">
-							<pre><code class='prettyprint'>  let private generateHtml source files sections =
-    let destination, depth = getDestination source
-    let pathToRoot = List.fold (fun pathToRoot _ -&gt; Path.Combine(&quot;..&quot;, pathToRoot)) &quot;&quot; [0..(depth-1)]
+                    </td>
+                    <td class="code">
+                        <pre><code class='prettyprint'>let private generateHtml (settings:Settings) (templateType:Type) files source sections =
+  let destination, depth = getDestination source
+  let pathToRoot = List.fold (fun pathToRoot _ -&gt; Path.Combine(&quot;..&quot;, pathToRoot)) &quot;&quot; [0..(depth-1)]
   
-    let templateType = getTemplateType()
-    let htmlTemplate = Activator.CreateInstance(templateType) :?&gt; TemplateBase
+  let htmlTemplate = Activator.CreateInstance(templateType) :?&gt; TemplateBase
 
-    htmlTemplate.Title &lt;- Path.GetFileName(source)
-    htmlTemplate.PathToCss &lt;- Path.Combine(pathToRoot, &quot;focco.css&quot;).Replace(&#39;\\&#39;, &#39;/&#39;)
-    htmlTemplate.Sections &lt;- sections |&gt; Array.ofSeq
-    htmlTemplate.Sources &lt;- files |&gt; Array.ofSeq
-    htmlTemplate.GetSourcePath &lt;- Func&lt;_,_&gt;(fun s -&gt;
-      Path.Combine(pathToRoot, Path.ChangeExtension(s.ToLower(), &quot;.html&quot;).Substring(2)).Replace(&#39;\\&#39;, &#39;/&#39;))
-  
-    htmlTemplate.Execute()
-    File.WriteAllText(destination, htmlTemplate.Buffer.ToString())
-  
+  htmlTemplate.Title &lt;- Path.GetFileName(source)
+  htmlTemplate.Stylesheets &lt;- settings.Stylesheets
+  htmlTemplate.Scripts &lt;- settings.Scripts
+  htmlTemplate.Sections &lt;- sections |&gt; Array.ofSeq
+  htmlTemplate.Sources &lt;- files |&gt; Array.ofSeq
+  htmlTemplate.GetResourcePath &lt;- Func&lt;_,_&gt;(fun s -&gt; Path.Combine(pathToRoot, s).Replace(&#39;\\&#39;, &#39;/&#39;))
+  htmlTemplate.GetSourcePath &lt;- Func&lt;_,_&gt;(fun s -&gt;
+    Path.Combine(pathToRoot, Path.ChangeExtension(s.ToLower(), &quot;.html&quot;).Substring(2)).Replace(&#39;\\&#39;, &#39;/&#39;))
+
+  htmlTemplate.Execute()
+  File.WriteAllText(destination, htmlTemplate.Buffer.ToString())
+
 </code></pre>
-						</td>
-					</tr>
-					<tr id="section_17">
-						<td class="docs">
-							<div class="pilwrap">
-								<a class="pilcrow" href="#section_17">&#182;</a>
-							</div>
-							<p>Generate the documentation for a source file by reading it in, splitting it
+                    </td>
+                </tr>
+                <tr id="section_29">
+                    <td class="docs">
+                        <div class="pilwrap">
+                            <a class="pilcrow" href="#section_29">&#182;</a>
+                        </div>
+                        <p>Generate the documentation for a source file by reading it in, splitting it
 up into comment/code sections, highlighting them for the appropriate language,
 and merging them into an HTML template.</p>
 
-						</td>
-						<td class="code">
-							<pre><code class='prettyprint'>  let private generateDocumentation files source =
-    File.ReadAllLines source
-    |&gt; parse source
-    |&gt; highlight source
-    |&gt; generateHtml source files
-  
+                    </td>
+                    <td class="code">
+                        <pre><code class='prettyprint'>let private generateDocumentation settings templateType files source = async {
+  do! Async.SwitchToThreadPool()
+  parse source
+  |&gt; highlight
+  |&gt; generateHtml settings templateType files source
+  return source }
+
 </code></pre>
-						</td>
-					</tr>
-					<tr id="section_18">
-						<td class="docs">
-							<div class="pilwrap">
-								<a class="pilcrow" href="#section_18">&#182;</a>
-							</div>
-							<p>Find all the files that match the pattern(s) passed in as arguments and
+                    </td>
+                </tr>
+                <tr id="section_30">
+                    <td class="docs">
+                        <div class="pilwrap">
+                            <a class="pilcrow" href="#section_30">&#182;</a>
+                        </div>
+                        <p>Find all the files that match the pattern(s) passed in as arguments and
 generate documentation for each one.</p>
 
-						</td>
-						<td class="code">
-							<pre><code class='prettyprint'>  let generate (targets:string[]) =
-    if targets.Length &lt;= 0 then
-      failwith &quot;At least one target must be specified&quot;
-    else
-      Directory.CreateDirectory(&quot;docs&quot;) |&gt; ignore
-      File.Copy(sourceFileName = Path.Combine(executingDirectory, &quot;Resources&quot;, &quot;Focco.css&quot;),
-                destFileName = Path.Combine(&quot;docs&quot;, &quot;focco.css&quot;),
-                overwrite = true)
-      File.Copy(sourceFileName = Path.Combine(executingDirectory, &quot;Resources&quot;, &quot;prettify.js&quot;),
-                destFileName = Path.Combine(&quot;docs&quot;, &quot;prettify.js&quot;),
-                overwrite = true)
-      let files =
-        [ for target in targets do
+                    </td>
+                    <td class="code">
+                        <pre><code class='prettyprint'>let generate (settings:Settings) (targets:string[]) =
+</code></pre>
+                    </td>
+                </tr>
+                <tr id="section_31">
+                    <td class="docs">
+                        <div class="pilwrap">
+                            <a class="pilcrow" href="#section_31">&#182;</a>
+                        </div>
+                        <p>Create the target directory and copy in the stylesheet and javascript files. </p>
+
+                    </td>
+                    <td class="code">
+                        <pre><code class='prettyprint'>  Directory.CreateDirectory(settings.TargetDirectory) |&gt; ignore
+  copyResources settings
+
+</code></pre>
+                    </td>
+                </tr>
+                <tr id="section_32">
+                    <td class="docs">
+                        <div class="pilwrap">
+                            <a class="pilcrow" href="#section_32">&#182;</a>
+                        </div>
+                        <p>Collect all the files in the targets.</p>
+
+                    </td>
+                    <td class="code">
+                        <pre><code class='prettyprint'>  let files =
+    seq { for target in targets do
             yield! Directory.GetFiles(&quot;.&quot;, target, SearchOption.AllDirectories)
                    |&gt; Seq.filter (fun filename -&gt;
-                      not (getLanguage(Path.GetFileName(filename)) = Unchecked.defaultof&lt;Language&gt;)) ]
-      for file in files do generateDocumentation files file
+                      not (getLanguage(Path.GetFileName(filename)) = Unchecked.defaultof&lt;Language&gt;)) }
+
+  let templateType = getTemplateType settings.TemplateName
 
 </code></pre>
-						</td>
-					</tr>
-					<tr id="section_19">
-						<td class="docs">
-							<div class="pilwrap">
-								<a class="pilcrow" href="#section_19">&#182;</a>
-							</div>
-							<p>The program entry point.</p>
+                    </td>
+                </tr>
+                <tr id="section_33">
+                    <td class="docs">
+                        <div class="pilwrap">
+                            <a class="pilcrow" href="#section_33">&#182;</a>
+                        </div>
+                        <p>For each file found, create an asynchronous task to generate the output file,
+then run them all in parallel.</p>
 
-						</td>
-						<td class="code">
-							<pre><code class='prettyprint'>[&lt;EntryPoint&gt;]
+                    </td>
+                    <td class="code">
+                        <pre><code class='prettyprint'>  files
+  |&gt; Seq.map (generateDocumentation settings templateType files)
+  |&gt; Async.Parallel
+  |&gt; Async.RunSynchronously
+  |&gt; printfn &quot;Successfully processed the following files: %A&quot;
+
+</code></pre>
+                    </td>
+                </tr>
+                <tr id="section_34">
+                    <td class="docs">
+                        <div class="pilwrap">
+                            <a class="pilcrow" href="#section_34">&#182;</a>
+                        </div>
+                        <p>The program entry point.</p>
+
+                    </td>
+                    <td class="code">
+                        <pre><code class='prettyprint'>[&lt;EntryPoint&gt;]
 let main args =
-  if not (args.Length &gt; 0) then
-    printfn &quot;Run focco with a filename or path with file extension, e.g. `focco.exe src\\*.fs`.&quot;
-  else Focco.generate args
+  #if DEBUG
+  let args = [| &quot;Focco.fs&quot; |]
+  #endif
+  if args.Length &gt; 0 then
+    let settings = {
+        Scripts = [| &quot;prettify.js&quot; |]
+        Stylesheets = [| &quot;focco.css&quot; |]
+        TargetDirectory = &quot;docs&quot;
+        TemplateName = &quot;Focco.cshtml&quot; }
+    generate settings args
+  else printfn &quot;Run focco with a filename or path with file extension, e.g. `focco.exe src\\*.fs`.&quot;
   0
-
 </code></pre>
-						</td>
-					</tr>
-			</tbody>
-		</table>
-	</div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 </body>
 </html>
