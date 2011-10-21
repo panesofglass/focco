@@ -409,7 +409,7 @@ let main args =
   if args.Length > 0 then
     let settings = {
         Scripts = [| "prettify.js" |]
-        Stylesheets = [| "Focco.css" |]
+        Stylesheets = [| "focco.css" |]
         TargetDirectory = "docs"
         TemplateName = "Focco.cshtml" }
     generate settings args
